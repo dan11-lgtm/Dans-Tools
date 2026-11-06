@@ -1,0 +1,2408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClearZone V3.2 — Road Safety Audit Field Tool</title>
+<style>
+/* ============================================================
+   ClearZone V3.2 — self-contained stylesheet
+   Replaces Tailwind Play CDN (runtime compiler, ~400KB, dev-only)
+   ============================================================ */
+:root{
+  --green:#006747; --green-d:#00543a; --green-l:#e8f3ef;
+  --ink:#0f172a; --ink-2:#1e293b; --ink-3:#334155;
+  --muted:#64748b; --muted-2:#94a3b8; --muted-3:#cbd5e1;
+  --line:#e2e8f0; --line-2:#f1f5f9;
+  --bg:#f5f7f9; --panel:#ffffff;
+  --amber:#b45309; --amber-bg:#fffbeb;
+  --red:#dc2626; --blue:#1d4ed8;
+  --r:14px; --r-lg:22px;
+  --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 14px rgba(15,23,42,.06);
+  --shadow-lg:0 10px 40px rgba(15,23,42,.18);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;overflow:hidden;-webkit-font-smoothing:antialiased}
+[x-cloak]{display:none!important}
+.hidden{display:none!important}
+svg.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-.125em}
+
+/* ---------- Boot ---------- */
+#boot{position:fixed;inset:0;z-index:9999;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px}
+#boot .bt{font-size:20px;font-weight:800;letter-spacing:-.02em}
+#boot .bs{font-size:12px;color:var(--muted-2);font-family:var(--mono)}
+#boot .berr{max-width:520px;text-align:center;font-size:13px;color:#fca5a5;line-height:1.6;padding:0 20px}
+.spin{width:26px;height:26px;border:3px solid rgba(255,255,255,.15);border-top-color:#34d399;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ---------- Layout ---------- */
+#layout{display:grid;grid-template-columns:264px 1fr;height:100vh}
+aside{background:var(--ink);color:#fff;display:flex;flex-direction:column;overflow:hidden}
+.brand{padding:22px 24px 18px;border-bottom:1px solid var(--ink-2)}
+.brand .tag{display:flex;align-items:center;gap:7px;color:#34d399;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.brand h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.brand p{margin:3px 0 0;font-size:11px;color:var(--muted)}
+nav{padding:14px 0;flex:1;overflow-y:auto}
+.nav-link{width:100%;background:none;border:0;font-family:inherit;text-align:left;display:flex;align-items:center;gap:11px;padding:11px 24px;color:var(--muted-2);cursor:pointer;border-left:3px solid transparent;font-size:13.5px;transition:.15s;user-select:none}
+.nav-link:hover{background:var(--ink-2);color:#fff}
+.nav-link.on{background:var(--ink-2);color:#fff;border-left-color:#34d399;font-weight:700}
+.nav-link .ct{margin-left:auto;background:#334155;color:#cbd5e1;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
+.side-foot{padding:16px 24px;border-top:1px solid var(--ink-2);background:rgba(0,0,0,.22);font-size:11px;color:var(--muted)}
+.side-foot b{display:block;color:#cbd5e1;font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.netpill{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em}
+.netpill.on{background:rgba(16,185,129,.16);color:#6ee7b7}
+.netpill.off{background:rgba(245,158,11,.16);color:#fcd34d}
+
+/* Scroll chain is load-bearing: main needs BOTH height and min-height:0,
+   .scroll needs min-height:0, or content is clipped by body{overflow:hidden}. */
+main{display:flex;flex-direction:column;min-width:0;height:100vh;min-height:0}
+header.bar{height:66px;background:var(--panel);border-bottom:1px solid var(--line);padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex:none;z-index:20}
+header.bar h2{margin:0;font-size:11px;font-weight:800;color:var(--muted-2);text-transform:uppercase;letter-spacing:.12em}
+header.bar .sub{font-size:12px;color:var(--muted);margin-top:2px;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-actions{display:flex;gap:9px;align-items:center}
+.scroll{flex:1;min-height:0;overflow-y:auto;position:relative;-webkit-overflow-scrolling:touch}
+.wrap{padding:32px 28px 60px;max-width:1180px;margin:0 auto}
+.wrap.narrow{max-width:900px}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;border-radius:11px;padding:9px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:.15s;white-space:nowrap;background:none;color:inherit}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-pri{background:var(--green);color:#fff}
+.btn-pri:hover:not(:disabled){background:var(--green-d)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover:not(:disabled){background:#1e40af}
+.btn-out{background:var(--panel);border-color:var(--line);color:var(--ink-3)}
+.btn-out:hover:not(:disabled){border-color:var(--muted-3);background:var(--line-2)}
+.btn-ghost{color:var(--muted);padding:9px 12px}
+.btn-ghost:hover{color:var(--ink);background:var(--line-2)}
+.btn-sm{padding:6px 11px;font-size:12px;border-radius:9px}
+.btn-danger{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.btn-danger:hover:not(:disabled){background:#fee2e2}
+
+/* ---------- Cards / panels ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);overflow:hidden}
+.card-h{padding:18px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:14px}
+.card-h h3{margin:0;font-size:14px;font-weight:800;letter-spacing:-.01em}
+.card-h p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.card-b{padding:26px}
+.card-h.green{background:var(--green);border-bottom:none}
+.card-h.green h3{color:#fff}
+.card-h.green p{color:#a7d9c8}
+
+/* ---------- Forms ---------- */
+.label{display:block;font-size:10px;font-weight:800;color:var(--muted-2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.input,.select,.ta{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--ink);background:var(--panel);outline:none;transition:.15s}
+.input:focus,.select:focus,.ta:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,103,71,.09)}
+.ta{resize:vertical;line-height:1.6;min-height:96px}
+.select{appearance:none;background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;background-size:15px;padding-right:34px}
+.field{margin-bottom:20px}
+.grid{display:grid;gap:20px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:1000px){.g2,.g3{grid-template-columns:1fr}}
+.hint{font-size:11px;color:var(--muted-2);margin-top:6px;line-height:1.5}
+.sect-title{font-size:11px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.12em;margin:34px 0 16px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+.sect-title:first-child{margin-top:0}
+.chk{display:flex;align-items:flex-start;gap:9px;font-size:13px;cursor:pointer;padding:7px 0}
+.chk input{margin:2px 0 0;accent-color:var(--green);width:15px;height:15px;flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:6px 13px;font-size:12px;font-weight:600;color:var(--ink-3);cursor:pointer;transition:.15s;user-select:none}
+.chip:hover{border-color:var(--muted-3)}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ---------- Findings feed ---------- */
+.feed{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:1100px){.feed{grid-template-columns:1fr}}
+.fcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);display:flex;overflow:hidden;min-height:176px;transition:.15s}
+.fcard:hover{box-shadow:var(--shadow-lg);border-color:var(--muted-3)}
+.fcard.drag{opacity:.35}
+.fcard.over{outline:2px dashed var(--green);outline-offset:-4px}
+.fthumb{width:35%;min-width:132px;background:var(--line-2);position:relative;cursor:grab;flex:none}
+.fthumb:active{cursor:grabbing}
+.fthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.fthumb .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted-3);font-size:26px}
+.fref{position:absolute;top:9px;left:9px;background:rgba(15,23,42,.78);color:#fff;font-size:10px;font-weight:800;font-family:var(--mono);padding:3px 8px;border-radius:7px;display:flex;align-items:center;gap:4px}
+.frisk{position:absolute;bottom:9px;left:9px;font-size:9px;font-weight:800;padding:4px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:.05em;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.fbody{padding:16px 18px;flex:1;display:flex;flex-direction:column;min-width:0}
+.fbody h4{margin:0;font-size:14px;font-weight:700;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.fbody .fd{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.fmeta{margin-top:auto;padding-top:11px;border-top:1px solid var(--line-2);display:flex;flex-wrap:wrap;gap:5px 13px;font-size:10.5px;color:var(--muted-2);font-family:var(--mono)}
+.fmeta .ch{color:var(--green);font-weight:700}
+.facts{display:flex;gap:3px;margin-left:auto}
+.iconbtn{border:none;background:none;color:var(--muted-3);cursor:pointer;padding:5px;border-radius:8px;font-size:14px;display:inline-flex;transition:.15s}
+.iconbtn:hover{background:var(--line-2);color:var(--ink-3)}
+.iconbtn.del:hover{background:#fef2f2;color:var(--red)}
+.ctchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.ctchip{font-size:9.5px;font-weight:700;background:var(--line-2);color:var(--ink-3);padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ---------- Empty ---------- */
+.empty{text-align:center;padding:80px 20px;color:var(--muted-2)}
+.empty svg{width:52px;height:52px;stroke-width:1.2;color:var(--muted-3);margin-bottom:16px}
+.empty h3{margin:0 0 6px;font-size:15px;color:var(--muted);font-weight:700}
+.empty p{margin:0;font-size:13px}
+
+/* ---------- Checklist ---------- */
+.clcat{margin-bottom:16px}
+.clhead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 22px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);cursor:pointer;user-select:none;transition:.15s}
+.clhead:hover{border-color:var(--muted-3)}
+.clhead.open{border-radius:var(--r) var(--r) 0 0;border-bottom-color:transparent}
+.clcode{font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;background:var(--green);padding:3px 8px;border-radius:6px;flex:none}
+.clname{font-size:13.5px;font-weight:700;flex:1;min-width:0}
+.clsrc{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;flex:none}
+.clsrc.qld{background:#dbeafe;color:#1e40af}
+.clsrc.orig{background:var(--line-2);color:var(--muted)}
+.clbody{border:1px solid var(--line);border-top:none;border-radius:0 0 var(--r) var(--r);background:var(--panel);overflow:hidden}
+.clitem{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:13px 22px;border-top:1px solid var(--line-2);cursor:pointer;transition:.12s}
+.clitem:hover{background:var(--green-l)}
+.clitem span{font-size:13px;line-height:1.5}
+.clitem .add{font-size:10px;font-weight:800;color:var(--green);background:var(--green-l);padding:5px 11px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em;flex:none;transition:.12s}
+.clitem:hover .add{background:var(--green);color:#fff}
+.attrib{font-size:11px;color:var(--muted-2);line-height:1.6;padding:16px 20px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:18px}
+.attrib b{color:var(--ink-3)}
+
+/* ---------- Modal ---------- */
+.mask{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;padding:28px}
+.mask .veil{position:absolute;inset:0;background:rgba(15,23,42,.62);backdrop-filter:blur(3px)}
+.modal{position:relative;background:var(--panel);border-radius:26px;box-shadow:var(--shadow-lg);width:100%;max-width:1080px;height:calc(100vh - 48px);max-height:900px;display:flex;overflow:hidden}
+.modal-side{width:392px;flex:none;background:var(--bg);border-right:1px solid var(--line);padding:26px;overflow-y:auto;min-height:0}
+.modal-main{flex:1;padding:30px 34px;overflow-y:auto;min-width:0;min-height:0}
+/* The form column is ~688px wide whatever the viewport, so the viewport
+   media query cannot collapse this grid — force one column here. */
+.modal-main .grid.g2{grid-template-columns:1fr}
+.modal-main .riskbox .grid.g2{grid-template-columns:1fr 1fr}
+.modal-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:26px}
+.modal-hd h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.gpsline{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--line-2);border:1px solid var(--line);padding:5px 10px;border-radius:8px;display:inline-block;margin-top:8px}
+.drop{border:2px dashed var(--muted-3);border-radius:18px;background:var(--panel);height:220px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;transition:.15s;cursor:pointer}
+.drop:hover{border-color:var(--green);background:var(--green-l)}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.drop .dz{pointer-events:none;color:var(--muted-2)}
+.drop .dz svg{width:34px;height:34px;stroke-width:1.4;margin-bottom:9px;color:var(--muted-3)}
+.drop .dz b{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+#miniMap{height:210px;border-radius:14px;border:1px solid var(--line);background:var(--line-2);margin-top:8px}
+#miniMap .leaflet-control-attribution{font-size:8.5px;line-height:1.3;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font-size:10px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.05em}
+.badge.ok{background:var(--green-l);color:var(--green)}
+.badge.warn{background:var(--amber-bg);color:var(--amber)}
+.riskbox{background:var(--ink);border-radius:18px;padding:20px;color:#fff}
+.riskbox .label{color:var(--muted)}
+/* background-color, not the shorthand: "background:" reset no-repeat and tiled the chevron */
+.riskbox .select{background-color:var(--ink-2);border-color:#334155;color:#fff;background-repeat:no-repeat;background-position:right 11px center;background-size:15px;background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")}
+.riskout{display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:16px;border-top:1px solid var(--ink-3)}
+.riskout span:first-child{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.riskpill{font-size:11px;font-weight:800;padding:6px 15px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em}
+
+/* ---------- Matrix editor ---------- */
+.mx{width:100%;border-collapse:separate;border-spacing:3px;font-size:11px}
+.mx th{font-weight:700;color:var(--muted);text-align:center;padding:5px 3px;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.mx th.rh{text-align:right;padding-right:9px;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.mx td{padding:0}
+.mx select{width:100%;border:1px solid var(--line);border-radius:7px;padding:5px 4px;font-size:10.5px;font-family:inherit;font-weight:700;text-align:center;appearance:none;cursor:pointer;color:#fff;outline:none}
+.mx select:focus{box-shadow:0 0 0 2px rgba(0,103,71,.3)}
+
+/* ---------- Map ---------- */
+#mapPane{position:absolute;inset:0}
+#mainMap{width:100%;height:100%}
+.mapctl{position:absolute;top:16px;right:16px;z-index:800;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:14px;width:238px}
+.mapctl h4{margin:0 0 4px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.mapctl p{margin:0 0 11px;font-size:11px;color:var(--muted-2);line-height:1.5}
+.mapctl .btn{width:100%;justify-content:center}
+.tilestat{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-top:9px;text-align:center}
+
+/* ---------- Recommendations ---------- */
+.rrow{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px;min-height:212px}
+.rthumb{width:190px;flex:none;background:var(--line-2)}
+.rthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.rinfo{width:290px;flex:none;padding:20px;background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.rinfo h4{margin:5px 0 0;font-size:13.5px;font-weight:700;line-height:1.4}
+.rinfo .fd{font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
+.redit{flex:1;padding:20px;display:flex;flex-direction:column;min-width:0}
+.redit .ta{flex:1}
+
+/* ---------- Toast ---------- */
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:5000;display:flex;flex-direction:column;gap:9px;align-items:center;pointer-events:none}
+.toast{background:var(--ink);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:9px;animation:tin .25s ease}
+.toast.err{background:#7f1d1d}
+.toast.ok{background:var(--green-d)}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}}
+
+/* ---------- Phone / small tablet (field use) ---------- */
+.fmove{display:none}
+.mfoot{display:none}
+@media(max-width:760px){
+  #layout{grid-template-columns:58px 1fr}
+  .brand{padding:16px 0;text-align:center}
+  .brand h1,.brand p,.nav-link span,.side-foot b,.side-foot>span{display:none}
+  .brand .tag{justify-content:center;margin:0;font-size:9px}
+  .nav-link{padding:14px 0;justify-content:center;font-size:18px}
+  .side-foot{padding:12px 0;text-align:center}
+  .netpill span{display:none}
+  header.bar{padding:0 12px;height:58px}
+  header.bar .sub{max-width:140px}
+  .bar-actions .btn .bl{display:none}
+  .bar-actions .btn{padding:9px 12px}
+  .wrap{padding:18px 12px 60px}
+  .card-b{padding:18px}
+  .card-h{padding:14px 18px}
+  .fcard{flex-direction:column}
+  .fthumb{width:100%;height:180px}
+  .fmove{display:inline-flex}
+  .rrow{flex-direction:column}
+  .rthumb{width:100%;height:160px}
+  .rinfo{width:auto;border-right:none;border-bottom:1px solid var(--line)}
+  .mask{padding:0}
+  .modal{flex-direction:column;border-radius:0;height:100vh;max-height:none;overflow-y:auto}
+  .modal-side{width:auto;border-right:none;border-bottom:1px solid var(--line);overflow:visible}
+  .modal-main{padding:20px 16px;overflow:visible}
+  .modal-hd{flex-wrap:wrap}
+  .modal-hd .btn{display:none}
+  .mfoot{display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;z-index:5;padding:10px 16px;background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(15,23,42,.08)}
+  .mapctl{top:auto;bottom:16px;right:12px;left:12px;width:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- Boot overlay -->
+<div id="boot">
+  <div class="spin" id="bootSpin"></div>
+  <div class="bt">ClearZone</div>
+  <div class="bs" id="bootMsg">starting…</div>
+  <div class="berr hidden" id="bootErr"></div>
+</div>
+
+<!-- Icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g id="i-gear"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></g>
+<g id="i-list"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></g>
+<g id="i-tools"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></g>
+<g id="i-clip"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 13l2 2 4-4"/></g>
+<g id="i-map"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16M16 6v16"/></g>
+<g id="i-plus"><path d="M12 5v14M5 12h14"/></g>
+<g id="i-doc"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l1.5 5L12 14l1.5 4L15 13"/></g>
+<g id="i-pencil"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></g>
+<g id="i-trash"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></g>
+<g id="i-grip"><circle cx="9" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="15" cy="18" r="1.4"/></g>
+<g id="i-pin"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></g>
+<g id="i-cam"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></g>
+<g id="i-sign"><path d="M12 2v3M12 21v-4M5 5h11l3 3-3 3H5zM19 13H8l-3 3 3 3h11z"/></g>
+<g id="i-img"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></g>
+<g id="i-up"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></g>
+<g id="i-down"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></g>
+<g id="i-empty"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12l6 6M15 12l-6 6"/></g>
+<g id="i-wifi"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></g>
+<g id="i-wifioff"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></g>
+<g id="i-layers"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></g>
+<g id="i-chev"><path d="M9 18l6-6-6-6"/></g>
+</defs></svg>
+
+<div id="layout" x-cloak x-data="auditApp()">
+
+  <aside>
+    <div class="brand">
+      <div class="tag"><svg class="i" viewBox="0 0 24 24"><use href="#i-clip"/></svg> V3.2</div>
+      <h1>ClearZone</h1>
+      <p>Road Safety Audit Field Tool</p>
+    </div>
+    <nav>
+      <button type="button" class="nav-link" :class="tab==='project' ? 'on' : ''" @click="tab='project'"><svg class="i" viewBox="0 0 24 24"><use href="#i-gear"/></svg><span>Project Setup</span></button>
+      <button type="button" class="nav-link" :class="tab==='findings' ? 'on' : ''" @click="tab='findings'"><svg class="i" viewBox="0 0 24 24"><use href="#i-list"/></svg><span>Findings</span><span class="ct" x-show="findings.length" x-text="findings.length"></span></button>
+      <button type="button" class="nav-link" :class="tab==='recs' ? 'on' : ''" @click="tab='recs'"><svg class="i" viewBox="0 0 24 24"><use href="#i-tools"/></svg><span>Recommendations</span></button>
+      <button type="button" class="nav-link" :class="tab==='checklist' ? 'on' : ''" @click="tab='checklist'"><svg class="i" viewBox="0 0 24 24"><use href="#i-clip"/></svg><span>Prompt Lists</span></button>
+      <button type="button" class="nav-link" :class="tab==='map' ? 'on' : ''" @click="openMap()"><svg class="i" viewBox="0 0 24 24"><use href="#i-map"/></svg><span>Satellite Map</span></button>
+      <button type="button" class="nav-link" :class="tab==='data' ? 'on' : ''" @click="tab='data'"><svg class="i" viewBox="0 0 24 24"><use href="#i-layers"/></svg><span>Data &amp; Offline</span></button>
+    </nav>
+    <div class="side-foot">
+      <b x-text="project.auditor || 'Unassigned auditor'"></b>
+      <span x-text="fmtDate(project.auditDate) || new Date().toLocaleDateString('en-AU')"></span>
+      <div>
+        <span class="netpill" :class="online?'on':'off'">
+          <svg class="i" viewBox="0 0 24 24" style="width:11px;height:11px"><use :href="online?'#i-wifi':'#i-wifioff'"/></svg>
+          <span x-text="online?'Online':'Offline'"></span>
+        </span>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <header class="bar">
+      <div style="min-width:0">
+        <h2 x-text="tabTitle()"></h2>
+        <div class="sub" x-show="project.projectName" x-text="project.projectName"></div>
+      </div>
+      <div class="bar-actions">
+        <button class="btn btn-pri" @click="newFinding()" title="New Finding"><svg class="i" viewBox="0 0 24 24"><use href="#i-plus"/></svg> <span class="bl">New Finding</span></button>
+        <button class="btn btn-blue" @click="exportWord()" :disabled="busy" title="Export Word"><svg class="i" viewBox="0 0 24 24"><use href="#i-doc"/></svg> <span class="bl">Export Word</span></button>
+      </div>
+    </header>
+
+    <div class="scroll">
+
+      <!-- ============ PROJECT SETUP ============ -->
+      <div class="wrap narrow" x-show="tab==='project'">
+        <div class="card">
+          <div class="card-h green">
+            <div><h3>Audit Project Details</h3><p>Populates the audit report header</p></div>
+          </div>
+          <div class="card-b">
+
+            <div class="sect-title">Project</div>
+            <div class="grid g2">
+              <div class="field"><label class="label">Project / Road Name</label>
+                <input class="input" x-model="project.projectName" @change="saveProject()" placeholder="Bruce Highway — Caboolture to Caloundra"></div>
+              <div class="field"><label class="label">Client / Road Owner</label>
+                <input class="input" x-model="project.client" @change="saveProject()" placeholder="TMR Metropolitan Region"></div>
+            </div>
+
+            <div class="sect-title">Audit</div>
+            <div class="grid g3">
+              <div class="field"><label class="label">Audit Stage</label>
+                <select class="select" x-model="project.stage" @change="saveProject()">
+                  <option value="">Select…</option>
+                  <template x-for="s in stages" :key="s"><option x-text="s" :value="s"></option></template>
+                </select></div>
+              <div class="field"><label class="label">Audit Date</label>
+                <input type="date" class="input" x-model="project.auditDate" @change="saveProject()"></div>
+              <div class="field"><label class="label">Speed Environment (km/h)</label>
+                <input class="input" x-model="project.speedEnv" @change="saveProject()" placeholder="80 / 100"></div>
+            </div>
+            <div class="field">
+              <label class="label">Audit Type Modifiers</label>
+              <div class="chips">
+                <template x-for="m in typeModifiers" :key="m">
+                  <div class="chip" :class="project.modifiers.includes(m) ? 'on' : ''" @click="toggleArr(project.modifiers,m);saveProject()" x-text="m"></div>
+                </template>
+              </div>
+              <div class="hint">Interim / repeat / thematic flags per QGRS Part 6 §7.7. Thematic audits focus on specific road user groups.</div>
+            </div>
+
+            <div class="sect-title">Team</div>
+            <div class="grid g2">
+              <div class="field"><label class="label">Audit Team Leader</label>
+                <input class="input" x-model="project.auditor" @change="saveProject()" placeholder="D. Smith — Senior Accredited RSA"></div>
+              <div class="field"><label class="label">Audit Team Members</label>
+                <input class="input" x-model="project.team" @change="saveProject()" placeholder="J. Brown (Auditor), K. Lee (Trainee)"></div>
+            </div>
+            <div class="field"><label class="label">Specialist Advisors</label>
+              <input class="input" x-model="project.advisors" @change="saveProject()" placeholder="Traffic signals specialist, QPS advisor">
+              <div class="hint">Listed separately from team members in the report — advisors are not required to be accredited auditors.</div>
+            </div>
+
+            <div class="sect-title">Site Conditions</div>
+            <div class="grid g2">
+              <div class="field"><label class="label">Weather During Inspection</label>
+                <input class="input" x-model="project.weather" @change="saveProject()" placeholder="Fine, dry, 24°C"></div>
+              <div class="field"><label class="label">Traffic Conditions</label>
+                <input class="input" x-model="project.traffic" @change="saveProject()" placeholder="Moderate — PM peak observed"></div>
+            </div>
+            <div class="grid g2">
+              <div class="field"><label class="label">Inspection Times</label>
+                <input class="input" x-model="project.times" @change="saveProject()" placeholder="Day 09:00–12:00; Night 19:30–21:00"></div>
+              <div class="field"><label class="label">Default Map Centre (lat, lng)</label>
+                <div style="display:flex;gap:9px">
+                  <input class="input" type="number" step="0.0001" x-model.number="project.lat" @change="saveProject()" placeholder="-27.4698">
+                  <input class="input" type="number" step="0.0001" x-model.number="project.lng" @change="saveProject()" placeholder="153.0251">
+                </div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk matrix config -->
+        <div class="card" style="margin-top:26px">
+          <div class="card-h">
+            <div><h3>Risk Assessment Scale</h3><p>Austroads does not mandate a fixed matrix — agencies define their own. Defaults are the TMR scale.</p></div>
+            <button class="btn btn-out btn-sm" @click="resetMatrix()">Reset to TMR</button>
+          </div>
+          <div class="card-b">
+            <div class="grid g2">
+              <div>
+                <label class="label">Likelihood Labels</label>
+                <template x-for="(l,i) in project.freqLabels" :key="'f'+i">
+                  <input class="input" style="margin-bottom:7px" x-model="project.freqLabels[i]" @change="saveProject()">
+                </template>
+              </div>
+              <div>
+                <label class="label">Severity Labels</label>
+                <template x-for="(l,i) in project.sevLabels" :key="'s'+i">
+                  <input class="input" style="margin-bottom:7px" x-model="project.sevLabels[i]" @change="saveProject()">
+                </template>
+              </div>
+            </div>
+            <div style="margin-top:24px">
+              <label class="label">Matrix — Likelihood (rows) × Severity (columns)</label>
+              <table class="mx">
+                <thead><tr><th></th>
+                  <template x-for="(s,j) in project.sevLabels" :key="'h'+j"><th x-text="s"></th></template>
+                </tr></thead>
+                <tbody>
+                  <template x-for="(f,i) in project.freqLabels" :key="'r'+i">
+                    <tr>
+                      <th class="rh" x-text="f"></th>
+                      <template x-for="(s,j) in project.sevLabels" :key="'c'+i+'_'+j">
+                        <td>
+                          <select x-model="project.matrix[i][j]" @change="saveProject();recalcAll()"
+                                  :style="'background:'+riskHex(project.matrix[i][j])+';color:'+(riskDark(project.matrix[i][j])?'#0f172a':'#fff')">
+                            <template x-for="lv in riskLevels" :key="lv"><option x-text="lv" :value="lv"></option></template>
+                          </select>
+                        </td>
+                      </template>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+              <div class="hint">Changing the matrix re-rates every existing finding immediately.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ FINDINGS ============ -->
+      <div class="wrap" x-show="tab==='findings'">
+        <template x-if="findings.length===0">
+          <div class="empty">
+            <svg class="i" viewBox="0 0 24 24"><use href="#i-empty"/></svg>
+            <h3>No findings recorded</h3>
+            <p>Use <b>New Finding</b>, or open <b>Prompt Lists</b> to scaffold from a QGRS prompt.</p>
+          </div>
+        </template>
+        <div class="feed">
+          <template x-for="(f,i) in findings" :key="f.id">
+            <div class="fcard" :class="{drag:dragFrom===i, over:dragOver===i&&dragFrom!==i}"
+                 draggable="true"
+                 @dragstart="dragFrom=i;$event.dataTransfer.effectAllowed='move'"
+                 @dragend="dragFrom=null;dragOver=null"
+                 @dragover.prevent="dragOver=i"
+                 @dragleave="dragOver===i&&(dragOver=null)"
+                 @drop.prevent="dropAt(i)">
+              <div class="fthumb">
+                <template x-if="thumbs[f.id]"><img :src="thumbs[f.id]" alt=""></template>
+                <template x-if="!thumbs[f.id]"><div class="ph"><svg class="i" viewBox="0 0 24 24"><use href="#i-img"/></svg></div></template>
+                <div class="fref"><svg class="i" viewBox="0 0 24 24" style="width:10px;height:10px"><use href="#i-grip"/></svg><span x-text="i+1"></span></div>
+                <div class="frisk" :style="'background:'+riskHex(f.risk)+';color:'+(riskDark(f.risk)?'#0f172a':'#fff')" x-text="f.risk"></div>
+              </div>
+              <div class="fbody">
+                <div style="display:flex;align-items:flex-start;gap:8px">
+                  <h4 x-text="f.title" style="flex:1"></h4>
+                  <div class="facts">
+                    <button class="iconbtn fmove" @click="moveFinding(i,-1)" :disabled="i===0" title="Move up">&#9650;</button>
+                    <button class="iconbtn fmove" @click="moveFinding(i,1)" :disabled="i===findings.length-1" title="Move down">&#9660;</button>
+                    <button class="iconbtn" @click="editFinding(i)" title="Edit"><svg class="i" viewBox="0 0 24 24"><use href="#i-pencil"/></svg></button>
+                    <button class="iconbtn del" @click="deleteFinding(i)" title="Delete"><svg class="i" viewBox="0 0 24 24"><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <p class="fd" x-text="f.description"></p>
+                <div class="ctchips" x-show="f.crashTypes && f.crashTypes.length">
+                  <template x-for="ct in (f.crashTypes||[])" :key="ct"><span class="ctchip" x-text="ct"></span></template>
+                </div>
+                <div class="fmeta">
+                  <span class="ch" x-show="f.promptRef" x-text="f.promptRef"></span>
+                  <span class="ch" x-show="f.chainage" x-text="f.chainage"></span>
+                  <span x-text="f.lat+', '+f.lng"></span>
+                  <span x-show="f.timestamp" x-text="f.timestamp"></span>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ============ RECOMMENDATIONS ============ -->
+      <div class="wrap" x-show="tab==='recs'">
+        <template x-if="findings.length===0">
+          <div class="empty"><svg class="i" viewBox="0 0 24 24"><use href="#i-tools"/></svg><h3>Nothing to recommend on yet</h3><p>Record findings first.</p></div>
+        </template>
+        <template x-for="(f,i) in findings" :key="f.id">
+          <div class="rrow">
+            <div class="rthumb"><template x-if="thumbs[f.id]"><img :src="thumbs[f.id]" alt=""></template></div>
+            <div class="rinfo">
+              <span class="label" style="margin:0" x-text="'Finding '+(i+1)"></span>
+              <h4 x-text="f.title"></h4>
+              <p class="fd" x-text="f.description"></p>
+              <div style="margin-top:auto;padding-top:12px">
+                <span class="riskpill" :style="'background:'+riskHex(f.risk)+';color:'+(riskDark(f.risk)?'#0f172a':'#fff')" x-text="f.risk"></span>
+              </div>
+            </div>
+            <div class="redit">
+              <label class="label">Proposed Recommendation/s</label>
+              <textarea class="ta" x-model="f.recommendation" @input.debounce.400ms="saveFindings()" placeholder="Clear, specific engineering treatment advice…"></textarea>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- ============ CHECKLIST ============ -->
+      <div class="wrap narrow" x-show="tab==='checklist'">
+        <div class="attrib">
+          <b>Structure follows QGRS / AGRS Part 6 Appendix H.</b><br>
+          H.8 Steep Routes is reproduced from the <i>Queensland Guide to Road Safety Part 6: Road Safety Audit</i> (Nov 2022),
+          © State of Queensland (Department of Transport and Main Roads), licensed <b>CC BY 4.0</b>.
+          H.2–H.7 headings follow the Appendix H structure; the prompts beneath them are original practitioner wording,
+          not reproductions of Austroads copyright text. Always audit against the current published guide.
+        </div>
+        <template x-for="cat in checklist" :key="cat.code">
+          <div class="clcat">
+            <div class="clhead" :class="open===cat.code ? 'open' : ''" @click="open = open===cat.code ? null : cat.code">
+              <span class="clcode" x-text="cat.code"></span>
+              <span class="clname" x-text="cat.name"></span>
+              <span class="clsrc" :class="cat.qld?'qld':'orig'" x-text="cat.qld?'QLD · CC BY':'Original'"></span>
+              <span style="color:var(--muted-2);font-size:11px" x-text="cat.items.length"></span>
+              <svg class="i" viewBox="0 0 24 24" style="color:var(--muted-2)" :style="open===cat.code ? 'transform:rotate(90deg)' : ''"><use href="#i-chev"/></svg>
+            </div>
+            <div class="clbody" x-show="open===cat.code">
+              <template x-for="(it,ix) in cat.items" :key="ix">
+                <div class="clitem" @click="fromPrompt(it, cat.code)">
+                  <span x-text="it"></span>
+                  <span class="add">Create</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- ============ DATA & OFFLINE ============ -->
+      <div class="wrap narrow" x-show="tab==='data'">
+        <div class="card">
+          <div class="card-h"><div><h3>Project File</h3><p>Back up, hand over, or move the audit between machines</p></div></div>
+          <div class="card-b">
+            <div style="display:flex;gap:11px;flex-wrap:wrap">
+              <button class="btn btn-pri" @click="exportProject()" :disabled="busy"><svg class="i" viewBox="0 0 24 24"><use href="#i-down"/></svg> Export Project (.json)</button>
+              <label class="btn btn-out" style="position:relative;overflow:hidden">
+                <svg class="i" viewBox="0 0 24 24"><use href="#i-up"/></svg> Import Project
+                <input type="file" accept=".json,application/json" @change="importProject($event, false)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+              </label>
+              <label class="btn btn-out" style="position:relative;overflow:hidden" title="Add another auditor's findings to this audit">
+                <svg class="i" viewBox="0 0 24 24"><use href="#i-plus"/></svg> Merge Findings
+                <input type="file" accept=".json,application/json" @change="importProject($event, true)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+              </label>
+            </div>
+            <div class="hint" style="margin-top:14px">
+              The export bundles project metadata, every finding, and all photos into one file. Browser storage is not a
+              backup — clearing site data destroys an unexported audit. Export at the end of every site visit.
+              <b>Import</b> replaces everything on this device; <b>Merge</b> appends another team member's findings
+              (and photos) to this audit and keeps the current project details.
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:22px">
+          <div class="card-h"><div><h3>Offline Readiness</h3><p>What is cached on this device</p></div></div>
+          <div class="card-b">
+            <div class="grid g2">
+              <div>
+                <label class="label">Application Assets</label>
+                <p class="hint" style="margin:0 0 10px">Alpine, Leaflet and fflate are cached locally on first successful load, so the tool opens with no connection. The HEIC converter (~3&nbsp;MB) is cached the first time it is used, or now.</p>
+                <div style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:700" x-text="assetStatus"></div>
+                <div style="font-family:var(--mono);font-size:12px;font-weight:700;margin-top:3px" :style="heicCached?'color:var(--green)':'color:var(--amber)'" x-text="heicCached ? 'HEIC converter cached' : 'HEIC converter not cached'"></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px">
+                  <button class="btn btn-out btn-sm" @click="refreshAssets()">Re-download assets</button>
+                  <button class="btn btn-out btn-sm" @click="cacheHeic()" x-show="!heicCached">Cache HEIC converter</button>
+                </div>
+              </div>
+              <div>
+                <label class="label">Map Tiles</label>
+                <p class="hint" style="margin:0 0 10px">Satellite tiles viewed while online are cached automatically. Pre-cache a corridor from the map screen before heading out.</p>
+                <div style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:700" x-text="tileCount+' tiles cached'"></div>
+                <button class="btn btn-danger btn-sm" style="margin-top:11px" @click="clearTiles()">Clear tile cache</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:22px">
+          <div class="card-h"><div><h3>Danger Zone</h3><p>Irreversible</p></div></div>
+          <div class="card-b">
+            <button class="btn btn-danger" @click="wipeAll()">Delete all findings and photos</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ MAP ============ -->
+      <div id="mapPane" x-show="tab==='map'">
+        <div id="mainMap" x-ref="mainMap"></div>
+        <div class="mapctl">
+          <h4>Offline Tiles</h4>
+          <p>Cache the current view and two zoom levels deeper for offline field use.</p>
+          <button class="btn btn-pri btn-sm" @click="cacheView()" :disabled="caching">
+            <svg class="i" viewBox="0 0 24 24"><use href="#i-layers"/></svg>
+            <span x-text="caching ? 'Caching '+cacheProg+'%' : 'Cache this view'"></span>
+          </button>
+          <div class="tilestat" x-text="tileCount+' tiles stored'"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ============ FINDING MODAL ============ -->
+  <div class="mask" x-show="modal" x-cloak @keydown.escape.window="modal && closeModal()">
+    <div class="veil" @click="closeModal()"></div>
+    <div class="modal">
+
+      <div class="modal-side">
+        <label class="label">Photo Evidence</label>
+        <div class="drop">
+          <input type="file" accept="image/*,.heic,.HEIC,.heif,.HEIF" @change="handleFile($event)">
+          <template x-if="processing">
+            <div class="dz"><div class="spin" style="border-top-color:var(--green);margin:0 auto 10px"></div><b>Reading EXIF…</b></div>
+          </template>
+          <template x-if="!processing && cur.photo">
+            <img :src="cur.photo" alt="">
+          </template>
+          <template x-if="!processing && !cur.photo">
+            <div class="dz">
+              <svg class="i" viewBox="0 0 24 24"><use href="#i-cam"/></svg>
+              <b>Attach photo to auto-locate</b>
+              <div style="font-size:11px;margin-top:5px">JPEG, PNG or HEIC</div>
+            </div>
+          </template>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:6px" x-show="cur.photo && !processing" @click="removePhoto()">
+          <svg class="i" viewBox="0 0 24 24"><use href="#i-trash"/></svg> Remove photo
+        </button>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <span class="label" style="margin:0">Pin Location</span>
+          <span class="badge ok" x-show="gpsOk">EXIF GPS synced</span>
+          <span class="badge warn" x-show="!gpsOk && cur.photo">No GPS — set manually</span>
+        </div>
+        <div id="miniMap"></div>
+        <button class="btn btn-out btn-sm" style="width:100%;justify-content:center;margin-top:9px" @click="useDeviceGPS()">
+          <svg class="i" viewBox="0 0 24 24"><use href="#i-pin"/></svg> Use device GPS
+        </button>
+        <div class="hint" style="text-align:center">Tap the map or drag the pin to adjust. Colour follows the risk rating.</div>
+
+        <div x-show="cur.timestamp" style="margin-top:14px">
+          <label class="label">Photo Timestamp</label>
+          <div style="font-family:var(--mono);font-size:12px;color:var(--ink-3)" x-text="cur.timestamp"></div>
+          <div class="hint">Read from EXIF DateTimeOriginal — evidences when the observation was made.</div>
+        </div>
+      </div>
+
+      <div class="modal-main">
+        <div class="modal-hd">
+          <div>
+            <h2 x-text="editIx!==null ? 'Edit Finding' : 'New Finding'"></h2>
+            <div class="gpsline" x-text="cur.lat + ', ' + cur.lng"></div>
+            <span class="gpsline" style="margin-left:6px;color:var(--green);font-weight:700" x-show="cur.promptRef" x-text="'Prompt ' + cur.promptRef"></span>
+          </div>
+          <div style="display:flex;gap:8px;flex:none">
+            <button class="btn btn-ghost" @click="closeModal()">Discard</button>
+            <button class="btn btn-pri" @click="saveFinding()" x-text="editIx!==null ? 'Update' : 'Save Finding'"></button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Finding Title</label>
+          <input class="input" style="font-size:16px;font-weight:700" x-model="cur.title" placeholder="Describe the hazard in one line…">
+        </div>
+
+        <div class="field">
+          <label class="label">Chainage / Location Reference</label>
+          <input class="input" x-model="cur.chainage" placeholder="Ch 1+240 LHS  ·  or 'eastern roundabout approach'">
+        </div>
+
+        <div class="field">
+          <label class="label">Crash Type</label>
+          <div class="chips">
+            <template x-for="ct in crashTypeOptions" :key="ct">
+              <div class="chip" :class="cur.crashTypes.includes(ct) ? 'on' : ''" @click="toggleArr(cur.crashTypes, ct)" x-text="ct"></div>
+            </template>
+          </div>
+        </div>
+
+        <div class="grid g2">
+          <div class="field">
+            <label class="label">Risk / Hazard, Extent and Crash Mechanism</label>
+            <textarea class="ta" style="min-height:190px" x-model="cur.description"
+              placeholder="What is the hazard, who is exposed, over what extent, and how would a crash occur?"></textarea>
+          </div>
+          <div class="field">
+            <label class="label">Risk Assessment</label>
+            <div class="riskbox">
+              <div class="grid g2" style="gap:12px">
+                <div>
+                  <label class="label">Likelihood</label>
+                  <select class="select" x-model.number="cur.freqIdx" @change="calcRisk()">
+                    <template x-for="(l,i) in project.freqLabels" :key="'mf'+i">
+                      <option :value="i" x-text="l"></option>
+                    </template>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">Severity</label>
+                  <select class="select" x-model.number="cur.sevIdx" @change="calcRisk()">
+                    <template x-for="(l,i) in project.sevLabels" :key="'ms'+i">
+                      <option :value="i" x-text="l"></option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+              <div class="riskout">
+                <span>Rating</span>
+                <span class="riskpill" :style="'background:'+riskHex(cur.risk)+';color:'+(riskDark(cur.risk)?'#0f172a':'#fff')" x-text="cur.risk"></span>
+              </div>
+            </div>
+            <div class="hint">Scale and matrix are set in Project Setup.</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Recommendation</label>
+          <textarea class="ta" x-model="cur.recommendation" placeholder="Specific, actionable treatment advice…"></textarea>
+        </div>
+      </div>
+
+      <!-- phone only: Save stays reachable while scrolling the stacked modal -->
+      <div class="mfoot">
+        <button class="btn btn-ghost" @click="closeModal()">Discard</button>
+        <button class="btn btn-pri" @click="saveFinding()" x-text="editIx!==null ? 'Update' : 'Save Finding'"></button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   ClearZone V3.2
+   Single-file Road Safety Audit field tool — Queensland TMR
+   ------------------------------------------------------------
+   Deliberate architecture notes:
+   - No Tailwind runtime compiler. Static CSS above.
+   - No FileSaver.js. Native anchor download.
+   - No Bootstrap Icons webfont. Inline SVG sprite.
+   - No heic2any. Native HEIC sniff + lazy heic-to only if needed.
+   - Vendor JS cached in IndexedDB => genuine offline from file://
+     (service workers cannot register from file:// so they are not
+      an option for a single-file distributable tool).
+   - function() style throughout for Alpine `this` binding.
+   - OOXML built with + concatenation only.
+   ============================================================ */
+
+/* ---------- IndexedDB ---------- */
+var CZDB = {
+  name: 'ClearZoneDB', ver: 3, db: null,
+  open: function () {
+    var self = this;
+    if (self._p) return self._p;
+    self._p = new Promise(function (res, rej) {
+      var rq = indexedDB.open(self.name, self.ver);
+      rq.onupgradeneeded = function (e) {
+        var db = e.target.result;
+        ['photos', 'thumbs', 'assets', 'tiles'].forEach(function (s) {
+          if (!db.objectStoreNames.contains(s)) db.createObjectStore(s, { keyPath: 'id' });
+        });
+      };
+      rq.onsuccess = function (e) { self.db = e.target.result; res(self.db); };
+      rq.onerror = function (e) { rej(e.target.error); };
+    });
+    return self._p;
+  },
+  tx: function (store, mode) {
+    return this.open().then(function (db) { return db.transaction(store, mode).objectStore(store); });
+  },
+  put: function (store, id, data) {
+    return this.tx(store, 'readwrite').then(function (os) {
+      return new Promise(function (res, rej) {
+        var r = os.put({ id: id, data: data });
+        r.onsuccess = function () { res(true); };
+        r.onerror = function (e) { rej(e.target.error); };
+      });
+    });
+  },
+  get: function (store, id) {
+    return this.tx(store, 'readonly').then(function (os) {
+      return new Promise(function (res, rej) {
+        var r = os.get(id);
+        r.onsuccess = function () { res(r.result ? r.result.data : null); };
+        r.onerror = function (e) { rej(e.target.error); };
+      });
+    });
+  },
+  del: function (store, id) {
+    return this.tx(store, 'readwrite').then(function (os) {
+      return new Promise(function (res) { var r = os.delete(id); r.onsuccess = function () { res(true); }; r.onerror = function () { res(false); }; });
+    });
+  },
+  all: function (store) {
+    return this.tx(store, 'readonly').then(function (os) {
+      return new Promise(function (res) { var r = os.getAll(); r.onsuccess = function () { res(r.result || []); }; r.onerror = function () { res([]); }; });
+    });
+  },
+  count: function (store) {
+    return this.tx(store, 'readonly').then(function (os) {
+      return new Promise(function (res) { var r = os.count(); r.onsuccess = function () { res(r.result || 0); }; r.onerror = function () { res(0); }; });
+    });
+  },
+  clear: function (store) {
+    return this.tx(store, 'readwrite').then(function (os) {
+      return new Promise(function (res) { var r = os.clear(); r.onsuccess = function () { res(true); }; r.onerror = function () { res(false); }; });
+    });
+  }
+};
+
+/* ---------- Vendor loader: cache-first, offline capable ----------
+   Each asset is cached as { u: url, code: text }. The URL carries the pinned
+   version, so bumping a version below is picked up on the next online load;
+   offline, the older cached copy is used rather than failing.            */
+var VENDORS = [
+  { k: 'leaflet-css', t: 'css', u: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' },
+  { k: 'leaflet-js', t: 'js', u: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js' },
+  { k: 'fflate', t: 'js', u: 'https://unpkg.com/fflate@0.8.3/umd/index.js' },
+  { k: 'alpine', t: 'js', u: 'https://unpkg.com/alpinejs@3.17.5/dist/cdn.min.js' }
+];
+/* Loaded on demand (first HEIC photo, or "Cache HEIC converter"), not at boot.
+   The IIFE build is self-contained (libheif wasm inlined) and exposes window.HeicTo. */
+var HEIC_VENDOR = { k: 'heic-to', t: 'js', u: 'https://cdn.jsdelivr.net/npm/heic-to@1.6.7/dist/iife/heic-to.js' };
+var LEGACY_ASSET_KEYS = ['jszip'];
+
+function bootMsg(s) { var e = document.getElementById('bootMsg'); if (e) e.textContent = s; }
+function bootFail(s) {
+  document.getElementById('bootSpin').classList.add('hidden');
+  var e = document.getElementById('bootErr');
+  e.classList.remove('hidden');
+  e.innerHTML = s;
+}
+
+function inject(v, code) {
+  return new Promise(function (res, rej) {
+    try {
+      var el;
+      if (v.t === 'css') { el = document.createElement('style'); el.textContent = code; document.head.appendChild(el); }
+      else { el = document.createElement('script'); el.textContent = code; document.head.appendChild(el); }
+      res(true);
+    } catch (err) { rej(err); }
+  });
+}
+
+/* Older builds stored the bare code string; treat that as "version unknown". */
+function assetCode(c) { return c == null ? null : (typeof c === 'string' ? c : c.code); }
+function assetUrl(c) { return c && typeof c === 'object' ? c.u : null; }
+
+function fetchVendor(v) {
+  return fetch(v.u, { mode: 'cors' })
+    .then(function (r) { if (!r.ok) throw new Error(v.k + ': HTTP ' + r.status); return r.text(); })
+    .then(function (code) {
+      // a CDN error page or captive-portal HTML must never be cached as a library
+      if (code.length < 500 || (v.t === 'js' && /^\s*</.test(code))) throw new Error(v.k + ': unexpected response');
+      return code;
+    });
+}
+
+function loadVendor(v, force) {
+  return CZDB.get('assets', v.k).catch(function () { return null; })
+    .then(function (cached) {
+      var fresh = cached && assetUrl(cached) === v.u;
+      if (fresh && !force) return inject(v, assetCode(cached)).then(function () { return 'cache'; });
+      return fetchVendor(v)
+        .then(function (code) {
+          return CZDB.put('assets', v.k, { u: v.u, code: code }).catch(function () { return true; })
+            .then(function () { return inject(v, code); })
+            .then(function () { return 'network'; });
+        })
+        .catch(function (err) {
+          // offline or CDN down: an older cached copy beats no app at all
+          if (cached) return inject(v, assetCode(cached)).then(function () { return 'stale'; });
+          throw err;
+        });
+    });
+}
+
+function boot(force) {
+  var srcs = [];
+  var seq = Promise.resolve();
+  VENDORS.forEach(function (v) {
+    seq = seq.then(function () {
+      bootMsg('loading ' + v.k + '…');
+      return loadVendor(v, force).then(function (src) { srcs.push(src); });
+    });
+  });
+  return seq.then(function () {
+    bootMsg('ready');
+    window.__czAssetSrc = srcs;
+    LEGACY_ASSET_KEYS.forEach(function (k) { CZDB.del('assets', k).catch(function () { }); });
+    var b = document.getElementById('boot');
+    if (b) b.parentNode.removeChild(b);
+  }).catch(function (err) {
+    bootFail('<b>Could not load application libraries.</b><br><br>'
+      + 'ClearZone caches its libraries on the first successful online load. '
+      + 'This device has no cached copy and no connection.<br><br>'
+      + 'Connect once, then it will open offline from then on.<br><br>'
+      + '<span style="opacity:.6;font-family:monospace;font-size:11px">' + xe(String(err && err.message || err)) + '</span>');
+  });
+}
+
+/* HEIC converter: cache-first, then network; resolves to window.HeicTo. */
+var _heicP = null;
+function loadHeic() {
+  if (window.HeicTo) return Promise.resolve(window.HeicTo);
+  if (_heicP) return _heicP;
+  _heicP = loadVendor(HEIC_VENDOR, false).then(function () {
+    if (typeof window.HeicTo !== 'function') throw new Error('HEIC converter did not initialise');
+    return window.HeicTo;
+  });
+  _heicP.catch(function () { _heicP = null; });
+  return _heicP;
+}
+
+/* ---------- Small utilities ---------- */
+function download(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+
+function toast(msg, kind) {
+  var box = document.getElementById('toast');
+  var el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(function () { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 320); }, 2600);
+}
+
+/* Strip characters that are illegal in XML 1.0 — a single stray
+   control char from a pasted note corrupts the whole .docx. */
+function xmlSafe(s) {
+  return String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '');
+}
+function xe(s) {
+  return xmlSafe(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ============================================================
+   APP
+   ============================================================ */
+function auditApp() {
+  return {
+    /* ---- state ---- */
+    tab: 'project',
+    findings: [],
+    thumbs: {},
+    modal: false,
+    cur: {},
+    editIx: null,
+    processing: false,
+    busy: false,
+    gpsOk: false,
+    open: 'H.4',
+    dragFrom: null,
+    dragOver: null,
+    online: navigator.onLine,
+    assetStatus: 'checking…',
+    tileCount: 0,
+    caching: false,
+    cacheProg: 0,
+    heicCached: false,
+    photoDirty: false,
+    modalSnap: '',
+    miniMap: null, miniMarker: null, mainMap: null, tileLayer: null,
+    pendLat: null, pendLng: null,
+
+    riskLevels: ['Extreme (FSI)', 'High (FSI)', 'High', 'Medium (FSI)', 'Medium', 'Low', 'Negligible'],
+
+    stages: [
+      'Feasibility (Strategic / Concept)',
+      'Preliminary Design',
+      'Detailed Design',
+      'Roadworks Traffic Management',
+      'Pre-opening',
+      'Immediate Post-opening (Post-completion)',
+      'Existing Road'
+    ],
+    typeModifiers: ['Interim', 'Repeat', 'Thematic — Pedestrian', 'Thematic — Cyclist', 'Thematic — Motorcycle', 'Road Safety Check', 'Maintainability Assessment'],
+
+    crashTypeOptions: ['Run-off-road', 'Head-on', 'Intersection', 'Rear-end', 'Side-swipe', 'Pedestrian', 'Cyclist', 'Motorcyclist', 'Heavy vehicle', 'Other'],
+
+    project: {},
+
+    defaultProject: function () {
+      return {
+        projectName: '', client: '', stage: '', auditDate: '', speedEnv: '',
+        auditor: '', team: '', advisors: '', weather: '', traffic: '', times: '',
+        modifiers: [],
+        lat: -27.4698, lng: 153.0251,
+        freqLabels: ['Almost Certain', 'Likely', 'Possible', 'Unlikely', 'Rare'],
+        sevLabels: ['Insignificant', 'Minor', 'Moderate', 'Serious', 'Fatal'],
+        matrix: [
+          ['Medium', 'High', 'High', 'Extreme (FSI)', 'Extreme (FSI)'],
+          ['Medium', 'Medium', 'High', 'Extreme (FSI)', 'Extreme (FSI)'],
+          ['Low', 'Medium', 'High', 'High (FSI)', 'Extreme (FSI)'],
+          ['Negligible', 'Low', 'Medium', 'High (FSI)', 'Extreme (FSI)'],
+          ['Negligible', 'Negligible', 'Low', 'Medium (FSI)', 'High (FSI)']
+        ]
+      };
+    },
+
+    /* ---- QGRS / AGRS Part 6 Appendix H structure ---- */
+    checklist: [
+      {
+        code: 'H.2', name: 'Front Loading', qld: false, items: [
+          'Has previous audit or corrective action documentation been reviewed?',
+          'Have relevant crash records for the site been obtained and analysed?',
+          'Is the design brief and its stated road function available?',
+          'Have departures from standards been identified and their mitigation documented?',
+          'Are traffic volume, composition and speed survey data available?',
+          'Have previous stage audit findings been carried through into the current design?',
+          'Are all relevant drawings, at the correct revision, available to the team?',
+          'Has the audit scope, including any out-of-scope items, been confirmed in writing?'
+        ]
+      },
+      {
+        code: 'H.3', name: 'Local Alignment', qld: false, items: [
+          'Is horizontal alignment consistent with driver expectation and approach speed?',
+          'Is vertical alignment providing adequate stopping sight distance throughout?',
+          'Do horizontal and vertical alignments combine to create hidden dips or false perspective?',
+          'Is superelevation appropriate through curves for all vehicle classes?',
+          'Are curve radii consistent between successive curves (no isolated tight curve)?',
+          'Are transition lengths adequate for the design speed?',
+          'Is overtaking provision safe, adequate and clearly delineated?',
+          'Are merge and diverge tapers of adequate length?',
+          'Is the alignment self-explaining for a driver unfamiliar with the route?'
+        ]
+      },
+      {
+        code: 'H.4', name: 'General Aspects', qld: false, items: [
+          'Are lane widths adequate for the design vehicle and traffic composition?',
+          'Are shoulders adequate in width, sealed where required, and trafficable?',
+          'Is the clear zone width adequate for the speed environment?',
+          'Are side slopes traversable, or otherwise shielded?',
+          'Are fixed hazards within the clear zone removed, relocated, made frangible or shielded?',
+          'Do culvert headwalls or drainage structures present an impact or drop hazard?',
+          'Are safety barriers warranted where installed, and of appropriate type?',
+          'Is barrier height, offset and deflection distance adequate for the hazard?',
+          'Are barrier end treatments compliant and correctly installed?',
+          'Is barrier length of need adequate at both the leading and trailing approach?',
+          'Are transitions between differing barrier types correctly detailed?',
+          'Is the pavement surface free of rutting, shoving, potholes and edge drop?',
+          'Does the pavement have adequate skid resistance, particularly on approaches?',
+          'Is there evidence of ponding, sheet flow or aquaplaning potential?',
+          'Is drainage infrastructure clear of the trafficable area or made traversable?',
+          'Is vegetation controlled so that sight lines and signs remain unobstructed?',
+          'Are property accesses safely located with adequate sight distance?',
+          'Is there adequate provision for breakdown and emergency stopping?',
+          'Are there hazards specific to motorcyclists, such as barrier post under-run?',
+          'Is the road environment consistent with the posted speed limit?'
+        ]
+      },
+      {
+        code: 'H.5', name: 'Intersections', qld: false, items: [
+          'Is the intersection type appropriate for the traffic volumes and turning demand?',
+          'Is Stopping Sight Distance adequate on every approach?',
+          'Is Approach Sight Distance to the intersection adequate?',
+          'Is Safe Intersection Sight Distance achieved at priority-controlled intersections?',
+          'Is Intersection Sight Distance adequate for all permitted movements?',
+          'Are sight triangles free of obstructions including vegetation, signs, fences and parked vehicles?',
+          'Is channelisation clear, correctly delineated and appropriate for the movements?',
+          'Are turn lane storage lengths adequate for the queuing demand?',
+          'Is roundabout deflection adequate to control entry speed?',
+          'Are splitter islands and pedestrian refuges of adequate width?',
+          'Is the intersection adequately conspicuous on approach, day and night?',
+          'Are conflicting movements minimised, and conflict points clearly managed?'
+        ]
+      },
+      {
+        code: 'H.6', name: 'Walking and Cycling', qld: false, items: [
+          'Are pedestrian paths provided where pedestrian demand exists?',
+          'Are path widths adequate for the expected volumes and user mix?',
+          'Are paths free of trip hazards such as lips, uneven joints and tree roots?',
+          'Are crossings located on pedestrian desire lines?',
+          'Is sight distance between crossing pedestrians and approaching drivers adequate?',
+          'Are tactile ground surface indicators present, correct and compliant?',
+          'Are kerb ramps provided, correctly aligned and compliant?',
+          'Is there a continuous accessible path of travel through the site?',
+          'Are cyclist facilities continuous, with no abrupt terminations?',
+          'Is cyclist space adequate through curves and at pinch points?',
+          'Are cyclist conflict points at intersections and driveways managed?',
+          'Are shared path conflicts between pedestrians and cyclists managed?',
+          'Is lighting adequate at crossings and along paths used after dark?',
+          'Are the needs of children, older pedestrians and people with disability addressed?'
+        ]
+      },
+      {
+        code: 'H.7', name: 'Traffic Signs, Line Markings and Lighting', qld: false, items: [
+          'Are regulatory signs present, correct, legible and lawfully installed?',
+          'Are warning signs present where required, and correctly located in advance?',
+          'Are guide signs legible at the approach speed and free of information overload?',
+          'Is sign retroreflectivity adequate under night-time conditions?',
+          'Are any signs faded, delaminated, damaged, dirty or obscured?',
+          'Are sign supports frangible or shielded where within the clear zone?',
+          'Are there redundant, conflicting or contradictory signs to be removed?',
+          'Are centre lines, edge lines and continuity lines present and in good condition?',
+          'Are no-overtaking zones correctly marked for the available sight distance?',
+          'Are turn arrows, holding lines and other pavement markings correct?',
+          'Are raised pavement markers present and functioning where required?',
+          'Are guide posts and chevron alignment markers correctly positioned and visible?',
+          'Is delineation effective in wet, night and low-visibility conditions?',
+          'Is lighting provided at intersections, crossings and other conflict areas?',
+          'Is lighting uniformity adequate, with no dark patches at decision points?',
+          'Are luminaire outages or vegetation obstruction of lighting evident?'
+        ]
+      },
+      {
+        code: 'H.8', name: 'Steep Routes (Queensland)', qld: true, items: [
+          /* Reproduced from QGRS Part 6 (Nov 2022) Table H.8.9,
+             © State of Queensland (TMR), CC BY 4.0 */
+          'Are the combinations of horizontal and vertical alignments considered safe?',
+          'Are sight distance requirements satisfied?',
+          'Are lane and shoulder widths appropriate for the volume and type of traffic?',
+          'Is the superelevation appropriate for all classes and likely speeds of vehicles?',
+          'Is adverse superelevation appropriate where used?',
+          'Are the intersections adequate for the type of traffic and volume?',
+          'Are existing guardrails adequate (for example, type, height, post spacing, end treatments and so on)?',
+          'Are all hazardous roadside objects within the clear zone shielded?',
+          'Can the required clear zone widths be provided by removing obstacles or flattening embankment slopes?',
+          'Is the clear zone trafficable in all weather conditions?',
+          'Are existing safety ramps and emergency exits in appropriate locations and effective in operation?',
+          'Are there sufficient safety ramps or emergency exits?',
+          'Are there any suitable locations for addition safety ramps or emergency exits?',
+          'Are existing brake check areas and brake cooling areas in appropriate locations and of adequate size?',
+          'Are there sufficient brake check areas or brake cooling areas?',
+          'Are there any suitable locations for additional brake check areas or brake cooling areas?',
+          'Are speed limits compatible with the road geometry and sight distance?',
+          'Where intersections are poorly located, are appropriate warning and guide signs erected?',
+          'Do the direction signs adequately cater for the drivers directional needs on the route?',
+          'Where necessary, are curves clearly delineated with chevron alignment markers?',
+          'Are all signs clearly visible (that is, not obstructed by vegetation, and so on)?',
+          'Are guide posts correctly positioned and spaced?',
+          'Are all guide posts clearly visible?',
+          'Are all necessary pavement markings present and in satisfactory condition (for example, centrelines, edge lines, continuity lines, pavement arrows, and so on)?',
+          'Are locations defined by reflective raised pavement markers or delineators where necessary?',
+          'Are delineation and signing adequate and effective in all conditions (day / night, wet / dry, fog / mist, and so on)?',
+          'Have the requirements of the steep grades signing set out in the Queensland Manual of Uniform Traffic Control Devices (Queensland MUTCD) been applied where appropriate?',
+          'Are drivers advised of alternate routes if necessary?',
+          'Is the pavement in good condition (for example, roughness, rutting, potholes and so on)?',
+          'Does the pavement appear to have adequate skid resistance with no sections that require testing?',
+          'Is the drainage of water from the pavement satisfactory (that is, there is no evidence of ponding)?',
+          'Is shoulder in good condition (for example, edge drop, edge wear and so on)?',
+          'Are the shoulders trafficable in wet conditions?'
+        ]
+      }
+    ],
+
+    /* ============================================================
+       INIT  (Alpine auto-calls this — there is NO x-init in markup)
+       ============================================================ */
+    init: function () {
+      var self = this;
+      this.project = this.defaultProject();
+      // the (hidden) modal template renders at start-up, so cur needs a real shape
+      this.cur = this.blank();
+
+      window.addEventListener('online', function () { self.online = true; });
+      window.addEventListener('offline', function () { self.online = false; });
+      this.refreshAssetStatus();
+
+      // Flush on tab hide / close: @change only fires on blur, so the last
+      // edit before closing a laptop lid or switching apps would be lost.
+      var flush = function () { if (self._ready) { self.saveProject(); self.saveFindings(); } };
+      window.addEventListener('pagehide', flush);
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); });
+
+      // Sequential, race-free startup
+      this.loadProject()
+        .then(function () { return self.loadFindings(); })
+        .then(function () { return self.migrate(); })
+        .then(function () { return self.loadThumbs(); })
+        .then(function () { return CZDB.count('tiles'); })
+        .then(function (n) { self.tileCount = n; })
+        .catch(function (e) { console.error('init', e); toast('Startup problem — see console', 'err'); })
+        .then(function () {
+          // Debounced autosave of every edit, wherever it is made. Armed only
+          // after loading so the defaults never overwrite stored data.
+          self._ready = true;
+          var tp = null, tf = null;
+          self.$watch('project', function () { clearTimeout(tp); tp = setTimeout(function () { self.saveProject(); }, 400); });
+          self.$watch('findings', function () { clearTimeout(tf); tf = setTimeout(function () { self.saveFindings(); }, 400); });
+        });
+    },
+
+    refreshAssetStatus: function () {
+      var self = this;
+      return CZDB.all('assets').then(function (rows) {
+        var m = {};
+        rows.forEach(function (r) { m[r.id] = r.data; });
+        var ok = VENDORS.filter(function (v) { return m[v.k] && assetUrl(m[v.k]) === v.u; }).length;
+        var any = VENDORS.filter(function (v) { return m[v.k]; }).length;
+        self.assetStatus = ok === VENDORS.length ? ok + '/' + VENDORS.length + ' libraries cached (offline ready)'
+          : any === VENDORS.length ? 'Older library versions cached — connect to update'
+            : ok + '/' + VENDORS.length + ' libraries cached — NOT offline ready';
+        var h = m[HEIC_VENDOR.k];
+        self.heicCached = !!h;
+      }).catch(function () { self.assetStatus = 'Browser storage unavailable — not offline ready'; });
+    },
+    cacheHeic: function () {
+      var self = this;
+      if (!navigator.onLine) { toast('Need a connection to download the HEIC converter', 'err'); return; }
+      toast('Downloading HEIC converter…');
+      loadHeic().then(function () { self.refreshAssetStatus(); toast('HEIC converter cached for offline use', 'ok'); })
+        .catch(function (e) { console.error(e); toast('HEIC converter download failed', 'err'); });
+    },
+    fmtDate: function (iso) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+      return m ? m[3] + '/' + m[2] + '/' + m[1] : (iso || '');
+    },
+    centre: function () {
+      var la = parseFloat(this.project.lat), ln = parseFloat(this.project.lng);
+      if (!isFinite(la) || !isFinite(ln) || Math.abs(la) > 90 || Math.abs(ln) > 180) return [-27.4698, 153.0251];
+      return [la, ln];
+    },
+
+    loadProject: function () {
+      var self = this;
+      return Promise.resolve().then(function () {
+        var raw = localStorage.getItem('clearzone_project_v3');
+        if (raw) {
+          var p = JSON.parse(raw);
+          var d = self.defaultProject();
+          Object.keys(d).forEach(function (k) { if (p[k] === undefined) p[k] = d[k]; });
+          if (!Array.isArray(p.modifiers)) p.modifiers = [];
+          self.project = p;
+        }
+      }).catch(function () { });
+    },
+
+    loadFindings: function () {
+      var self = this;
+      return Promise.resolve().then(function () {
+        var raw = localStorage.getItem('clearzone_findings_v3');
+        if (raw) self.findings = JSON.parse(raw) || [];
+      }).catch(function () { self.findings = []; });
+    },
+
+    /* One-shot migration from V1 (rsa_master_v16) and V2 (clearzone_*_v2) */
+    migrate: function () {
+      var self = this;
+      if (self.findings.length) return Promise.resolve();
+
+      var legacy = null, kind = null;
+      try {
+        var v2 = localStorage.getItem('clearzone_findings_v2');
+        if (v2) { legacy = JSON.parse(v2); kind = 'v2'; }
+        else {
+          var v1 = localStorage.getItem('rsa_master_v16');
+          if (v1) { legacy = JSON.parse(v1); kind = 'v1'; }
+        }
+      } catch (e) { return Promise.resolve(); }
+      if (!legacy || !legacy.length) return Promise.resolve();
+
+      var fl = self.project.freqLabels, sl = self.project.sevLabels;
+      var chain = Promise.resolve();
+      var out = [];
+
+      legacy.forEach(function (o) {
+        chain = chain.then(function () {
+          var id = o.id || self.uid();
+          var fi = fl.indexOf(o.freq); if (fi < 0) fi = 2;
+          var si = sl.indexOf(o.sev); if (si < 0) si = 1;
+          var f = {
+            id: id,
+            title: o.title || 'Untitled finding',
+            description: o.description || '',
+            recommendation: o.recommendation || '',
+            chainage: o.chainage || '',
+            crashTypes: [],
+            freqIdx: fi, sevIdx: si,
+            risk: self.project.matrix[fi][si],
+            lat: o.lat, lng: o.lng,
+            timestamp: o.timestamp || '',
+            hasPhoto: false
+          };
+          out.push(f);
+          // V2 kept photos in IDB keyed by id; V1 kept base64 inline
+          if (kind === 'v1' && o.photo) {
+            return self.storePhoto(id, o.photo).then(function () { f.hasPhoto = true; });
+          }
+          return CZDB.get('photos', id).then(function (p) {
+            if (p) { f.hasPhoto = true; return self.makeThumb(p).then(function (t) { return CZDB.put('thumbs', id, t); }); }
+          }).catch(function () { });
+        });
+      });
+
+      return chain.then(function () {
+        self.findings = out;
+        self.saveFindings();
+        try {
+          localStorage.removeItem('rsa_master_v16');
+          localStorage.removeItem('clearzone_findings_v2');
+          localStorage.removeItem('clearzone_project_v2');
+        } catch (e) { }
+        toast('Migrated ' + out.length + ' findings from ' + kind.toUpperCase(), 'ok');
+      });
+    },
+
+    loadThumbs: function () {
+      var self = this;
+      return CZDB.all('thumbs').then(function (rows) {
+        var m = {};
+        rows.forEach(function (r) { m[r.id] = r.data; });
+        self.thumbs = m;
+      }).catch(function () { });
+    },
+
+    /* ---- persistence ---- */
+    uid: function () { return 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); },
+    saveProject: function () {
+      try { localStorage.setItem('clearzone_project_v3', JSON.stringify(this.project)); }
+      catch (e) { toast('Could not save project settings', 'err'); }
+    },
+    saveFindings: function () {
+      // photos never enter localStorage — only lightweight metadata
+      try { localStorage.setItem('clearzone_findings_v3', JSON.stringify(this.findings)); }
+      catch (e) { toast('Storage full — export the project now', 'err'); }
+    },
+
+    tabTitle: function () {
+      return { project: 'Project Setup', findings: 'Findings', recs: 'Recommendations', checklist: 'Prompt Lists', map: 'Satellite Map', data: 'Data & Offline' }[this.tab] || '';
+    },
+    toggleArr: function (arr, v) {
+      var i = arr.indexOf(v);
+      if (i > -1) arr.splice(i, 1); else arr.push(v);
+    },
+
+    /* ---- risk ---- */
+    riskHex: function (r) {
+      return {
+        'Extreme (FSI)': '#dc2626', 'High (FSI)': '#d97706', 'High': '#f97316',
+        'Medium (FSI)': '#ca8a04', 'Medium': '#eab308', 'Low': '#84cc16', 'Negligible': '#94a3b8'
+      }[r] || '#94a3b8';
+    },
+    riskDark: function (r) { return ['Medium', 'Low', 'Negligible', 'Medium (FSI)'].indexOf(r) > -1; },
+    calcRisk: function () {
+      var m = this.project.matrix;
+      var i = this.cur.freqIdx, j = this.cur.sevIdx;
+      this.cur.risk = (m[i] && m[i][j]) ? m[i][j] : 'Medium';
+      if (this.miniMarker) this.miniMarker.setIcon(this.icon(this.cur.risk));
+    },
+    recalcAll: function () {
+      var m = this.project.matrix;
+      this.findings.forEach(function (f) {
+        if (m[f.freqIdx] && m[f.freqIdx][f.sevIdx]) f.risk = m[f.freqIdx][f.sevIdx];
+      });
+      this.saveFindings();
+      if (this.mainMap) this.drawMarkers();
+    },
+    resetMatrix: function () {
+      var d = this.defaultProject();
+      this.project.freqLabels = d.freqLabels;
+      this.project.sevLabels = d.sevLabels;
+      this.project.matrix = d.matrix;
+      this.saveProject(); this.recalcAll();
+      toast('Matrix reset to TMR default', 'ok');
+    },
+    icon: function (risk) {
+      var fill = this.riskHex(risk);
+      var n = parseInt(fill.slice(1), 16);
+      var r = Math.max(0, ((n >> 16) & 255) - 55), g = Math.max(0, ((n >> 8) & 255) - 55), b = Math.max(0, (n & 255) - 55);
+      var stroke = '#' + [r, g, b].map(function (v) { return v.toString(16).padStart(2, '0'); }).join('');
+      var dot = this.riskDark(risk) ? '#0f172a' : '#ffffff';
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 41" width="25" height="41">'
+        + '<path d="M12.5 0C5.596 0 0 5.596 0 12.5c0 9.375 12.5 28.5 12.5 28.5S25 21.875 25 12.5C25 5.596 19.404 0 12.5 0z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.5"/>'
+        + '<circle cx="12.5" cy="12.5" r="5" fill="' + dot + '" opacity="0.9"/></svg>';
+      return L.divIcon({ html: svg, className: '', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [0, -38] });
+    },
+
+    /* ============================================================
+       PHOTOS — EXIF, HEIC sniff, resize, thumbnails
+       ============================================================ */
+
+    /* HEIC/HEIF detection by ftyp brand, not filename.
+       Catches .HEIF, extensionless camera dumps and renamed files. */
+    sniffHeic: function (bytes) {
+      if (bytes.length < 12) return false;
+      if (!(bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70)) return false; // 'ftyp'
+      var brand = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]).toLowerCase();
+      return ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'hevm', 'hevs', 'mif1', 'msf1'].indexOf(brand) > -1;
+    },
+
+    readEXIF: function (buf) {
+      try {
+        var bytes = new Uint8Array(buf);
+        var start = -1;
+        var lim = Math.min(bytes.length - 10, 4 * 1024 * 1024);
+        var isTiff = function (o) {
+          return (bytes[o] === 0x49 && bytes[o + 1] === 0x49 && bytes[o + 2] === 0x2A && bytes[o + 3] === 0x00)
+            || (bytes[o] === 0x4D && bytes[o + 1] === 0x4D && bytes[o + 2] === 0x00 && bytes[o + 3] === 0x2A);
+        };
+        // Pass 1: the "Exif\0\0" marker (JPEG APP1 and HEIC Exif items both
+        // carry it) — a bare II*\0 / MM\0* pair can occur by chance in
+        // compressed data or an embedded thumbnail before the real block.
+        for (var i = 0; i < lim; i++) {
+          if (bytes[i] === 0x45 && bytes[i + 1] === 0x78 && bytes[i + 2] === 0x69 && bytes[i + 3] === 0x66
+            && bytes[i + 4] === 0 && bytes[i + 5] === 0 && isTiff(i + 6)) { start = i + 6; break; }
+        }
+        // Pass 2: raw TIFF header (bare TIFF files, unusual containers)
+        if (start === -1) {
+          for (var i2 = 0; i2 < lim; i2++) { if (isTiff(i2)) { start = i2; break; } }
+        }
+        if (start === -1) return { gps: null, ts: null };
+
+        var view = new DataView(buf, start);
+        var le = view.getUint8(0) === 0x49;
+        var u16 = function (o) { return view.getUint16(o, le); };
+        var u32 = function (o) { return view.getUint32(o, le); };
+
+        var ifd0 = u32(4);
+        var n0 = u16(ifd0);
+        var gpsOff = -1, exifOff = -1, dtOff = -1, dtLen = 0;
+        for (var j = 0; j < n0; j++) {
+          var e = ifd0 + 2 + j * 12, tag = u16(e);
+          if (tag === 0x8825) gpsOff = u32(e + 8);
+          else if (tag === 0x8769) exifOff = u32(e + 8);
+          else if (tag === 0x0132) { dtLen = u32(e + 4); dtOff = u32(e + 8); }
+        }
+
+        var gps = null;
+        if (gpsOff > 0 && gpsOff < view.byteLength) {
+          var ng = u16(gpsOff), tags = {};
+          for (var k = 0; k < ng; k++) {
+            var ek = gpsOff + 2 + k * 12;
+            tags[u16(ek)] = ek + 8;           /* byte offset of the value field — NOT the tag number */
+          }
+          var rat = function (o) { var a = u32(o), b = u32(o + 4); return b ? a / b : 0; };
+          var dms = function (t) {
+            if (!(t in tags)) return null;
+            var p = u32(tags[t]);
+            if (p + 24 > view.byteLength) return null;
+            return rat(p) + rat(p + 8) / 60 + rat(p + 16) / 3600;
+          };
+          var ref = function (t) {
+            if (!(t in tags)) return '';
+            return String.fromCharCode(view.getUint8(tags[t]));
+          };
+          var la = dms(2), lo = dms(4);
+          if (la !== null && lo !== null && isFinite(la) && isFinite(lo) && (la !== 0 || lo !== 0)) {
+            gps = {
+              lat: +(ref(1).toUpperCase() === 'S' ? -la : la).toFixed(6),
+              lng: +(ref(3).toUpperCase() === 'W' ? -lo : lo).toFixed(6)
+            };
+          }
+        }
+
+        var readStr = function (off, len) {
+          if (!off || off + 1 > view.byteLength) return '';
+          var s = '';
+          for (var c = 0; c < Math.min(len, 20); c++) {
+            var ch = view.getUint8(off + c);
+            if (!ch) break;
+            s += String.fromCharCode(ch);
+          }
+          return s;
+        };
+        var raw = '';
+        if (exifOff > 0 && exifOff < view.byteLength) {
+          var ne = u16(exifOff);
+          for (var m = 0; m < ne; m++) {
+            var em = exifOff + 2 + m * 12, et = u16(em);
+            if (et === 0x9003 || et === 0x9004) { raw = readStr(u32(em + 8), u32(em + 4)); if (raw) break; }
+          }
+        }
+        if (!raw && dtOff) raw = readStr(dtOff, dtLen);
+
+        var ts = null;
+        if (raw && raw.length >= 10) {
+          var mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          var pt = raw.split(' '), dp = pt[0].split(':'), tp = pt[1] ? pt[1].split(':') : [];
+          var mi = parseInt(dp[1], 10) - 1;
+          if (dp.length === 3 && mi >= 0 && mi < 12) {
+            ts = dp[2] + ' ' + mo[mi] + ' ' + dp[0];
+            if (tp.length >= 2) ts += ' ' + tp[0] + ':' + tp[1];
+          }
+        }
+        return { gps: gps, ts: ts };
+      } catch (err) {
+        console.warn('EXIF', err);
+        return { gps: null, ts: null };
+      }
+    },
+
+    /* Resize by total pixel budget, not width alone — a 1200x9000
+       panorama must not slip through untouched. Preserves PNG so
+       screenshots of markup are not re-encoded with JPEG artefacts. */
+    resize: function (dataUri, maxEdge, maxPixels) {
+      maxEdge = maxEdge || 1600;
+      maxPixels = maxPixels || 2200000;
+      var isPng = dataUri.indexOf('data:image/png') === 0;
+      return new Promise(function (res) {
+        var img = new Image();
+        img.onload = function () {
+          var w = img.naturalWidth, h = img.naturalHeight;
+          var scale = Math.min(1, maxEdge / Math.max(w, h), Math.sqrt(maxPixels / (w * h)));
+          // Small PNGs pass through. Everything else is re-encoded even at
+          // full size: the canvas bakes in the EXIF rotation (browsers apply it
+          // when decoding, Word does not), and WebP/GIF become JPEG, which
+          // every Word version can embed.
+          if (scale >= 1 && isPng) return res(dataUri);
+          var c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(w * scale));
+          c.height = Math.max(1, Math.round(h * scale));
+          var ctx = c.getContext('2d');
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          res(isPng ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = function () { res(dataUri); };
+        img.src = dataUri;
+      });
+    },
+
+    makeThumb: function (dataUri) { return this.resize(dataUri, 420, 200000); },
+
+    storePhoto: function (id, dataUri) {
+      var self = this;
+      return CZDB.put('photos', id, dataUri)
+        .then(function () { return self.makeThumb(dataUri); })
+        .then(function (t) { return CZDB.put('thumbs', id, t).then(function () { self.thumbs[id] = t; }); });
+    },
+
+    blobToDataUri: function (blob) {
+      return new Promise(function (res, rej) {
+        var r = new FileReader();
+        r.onload = function () { res(r.result); };
+        r.onerror = function () { rej(new Error('read failed')); };
+        r.readAsDataURL(blob);
+      });
+    },
+
+    handleFile: function (ev) {
+      var file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      ev.target.value = '';
+      var self = this;
+      var fid = this.cur.id;   // guards against the modal being closed/reopened mid-read
+      var live = function () { return self.modal && self.cur.id === fid; };
+      this.processing = true;
+      this.gpsOk = false;
+
+      file.arrayBuffer().then(function (buf) {
+        if (!live()) throw { stale: true };
+        var meta = self.readEXIF(buf);
+        if (meta.gps) { self.gpsOk = true; self.setPin(meta.gps.lat, meta.gps.lng); }
+        self.cur.timestamp = meta.ts || '';   // never keep the previous photo's time
+
+        var heic = self.sniffHeic(new Uint8Array(buf.slice(0, 16)));
+        if (!heic) return Promise.resolve(file);
+
+        // the converter (~3 MB) is pulled only when a HEIC is actually presented,
+        // then cached in IndexedDB so later HEIC photos convert offline
+        toast('HEIC detected — converting…');
+        return loadHeic()
+          .then(function (HeicTo) { return HeicTo({ blob: file, type: 'image/jpeg', quality: 0.9 }); })
+          .then(function (blob) { self.heicCached = true; return blob; })
+          .catch(function (err) {
+            console.error('heic-to', err);
+            throw new Error(self.online
+              ? 'HEIC conversion failed. Convert to JPEG and retry.'
+              : 'HEIC conversion needs a connection the first time. Set the camera to "Most Compatible", or connect briefly.');
+          });
+      })
+        .then(function (blob) { return self.blobToDataUri(blob); })
+        .then(function (uri) { return self.resize(uri, 1600, 2200000); })
+        .then(function (small) {
+          self.processing = false;
+          if (!live()) return;
+          self.cur.photo = small; self.photoDirty = true;
+        })
+        .catch(function (err) {
+          self.processing = false;
+          if (err && err.stale) return;
+          toast(err.message || 'Could not read that photo', 'err');
+        });
+    },
+    removePhoto: function () {
+      this.cur.photo = null;
+      this.cur.timestamp = '';
+      this.gpsOk = false;
+      this.photoDirty = true;
+    },
+
+    /* ============================================================
+       FINDING CRUD
+       ============================================================ */
+    blank: function () {
+      var c = this.centre();
+      return {
+        id: this.uid(), title: '', description: '', recommendation: '', chainage: '', promptRef: '',
+        crashTypes: [], freqIdx: 2, sevIdx: 1,
+        risk: this.project.matrix[2][1],
+        lat: c[0], lng: c[1],
+        timestamp: '', hasPhoto: false, photo: null
+      };
+    },
+    openModal: function () {
+      this.gpsOk = false; this.pendLat = null; this.pendLng = null;
+      this.photoDirty = false;
+      this.processing = false;
+      this.modalSnap = this.snapCur();
+      this.modal = true;
+      this.initMini();
+    },
+    snapCur: function () {
+      var c = this.cur;
+      return JSON.stringify([c.title, c.description, c.recommendation, c.chainage, c.crashTypes, c.freqIdx, c.sevIdx, c.lat, c.lng]);
+    },
+    /* Veil click / Esc / Discard: never silently throw away typed work. */
+    closeModal: function () {
+      if ((this.photoDirty || this.snapCur() !== this.modalSnap)
+        && !confirm('Discard changes to this finding?')) return;
+      this.modal = false;
+      this.editIx = null;
+    },
+    newFinding: function () {
+      this.editIx = null;
+      this.cur = this.blank();
+      this.openModal();
+    },
+    fromPrompt: function (text, code) {
+      this.newFinding();
+      this.cur.title = text;
+      this.cur.promptRef = code || '';
+      this.modalSnap = this.snapCur();
+      toast('Finding started from prompt');
+    },
+    editFinding: function (i) {
+      var self = this;
+      var f = this.findings[i];
+      this.editIx = i;
+      this.cur = JSON.parse(JSON.stringify(f));
+      this.cur.photo = null;
+      this.openModal();
+      if (f.hasPhoto) {
+        // only apply if the same finding is still open when IndexedDB answers
+        CZDB.get('photos', f.id).then(function (p) {
+          if (p && self.modal && self.cur.id === f.id && !self.photoDirty) self.cur.photo = p;
+        }).catch(function () { });
+      }
+    },
+    saveFinding: function () {
+      var self = this;
+      if (!this.cur.title || !this.cur.title.trim()) { toast('A finding title is required', 'err'); return; }
+      if (this.processing) { toast('Wait for the photo to finish loading', 'err'); return; }
+
+      var photo = this.cur.photo;
+      var rec = JSON.parse(JSON.stringify(this.cur));
+      delete rec.photo;
+      var id = rec.id;
+      var editIx = this.editIx;
+
+      // Only touch IndexedDB when the photo actually changed — re-storing an
+      // unchanged photo on every edit re-encoded the thumbnail for nothing.
+      var done;
+      if (!this.photoDirty) done = Promise.resolve();
+      else if (photo) done = this.storePhoto(id, photo).then(function () { rec.hasPhoto = true; });
+      else {
+        rec.hasPhoto = false;
+        delete this.thumbs[id];
+        done = Promise.all([CZDB.del('photos', id), CZDB.del('thumbs', id)]);
+      }
+
+      done.catch(function (e) {
+        console.error(e);
+        if (photo && self.photoDirty) rec.hasPhoto = !!(editIx !== null && self.findings[editIx] && self.findings[editIx].hasPhoto);
+        toast('Photo could not be stored — browser storage may be full', 'err');
+      }).then(function () {
+        if (editIx !== null && self.findings[editIx] && self.findings[editIx].id === id) self.findings.splice(editIx, 1, rec);
+        else {
+          var at = -1;
+          self.findings.forEach(function (f, k) { if (f.id === id) at = k; });
+          if (at > -1) self.findings.splice(at, 1, rec); else self.findings.push(rec);
+        }
+        self.saveFindings();
+        self.modal = false;
+        self.editIx = null;
+        self.photoDirty = false;
+        if (self.mainMap) self.drawMarkers();
+        toast('Finding saved', 'ok');
+      });
+    },
+    deleteFinding: function (i) {
+      var f = this.findings[i];
+      if (!confirm('Delete finding "' + f.title + '"? This cannot be undone.')) return;
+      CZDB.del('photos', f.id); CZDB.del('thumbs', f.id);
+      delete this.thumbs[f.id];
+      this.findings.splice(i, 1);
+      this.saveFindings();
+      if (this.mainMap) this.drawMarkers();
+    },
+    dropAt: function (target) {
+      var from = this.dragFrom;
+      this.dragOver = null;
+      if (from === null || from === target) { this.dragFrom = null; return; }
+      var item = this.findings.splice(from, 1)[0];
+      this.findings.splice(target, 0, item);
+      this.dragFrom = null;
+      this.saveFindings();
+      if (this.mainMap) this.drawMarkers();
+    },
+    /* Touch fallback — HTML5 drag-and-drop does not fire on most phones. */
+    moveFinding: function (i, d) {
+      var j = i + d;
+      if (j < 0 || j >= this.findings.length) return;
+      var item = this.findings.splice(i, 1)[0];
+      this.findings.splice(j, 0, item);
+      this.saveFindings();
+      if (this.mainMap) this.drawMarkers();
+    },
+
+    /* ============================================================
+       MAPS — with IndexedDB tile cache
+       ============================================================ */
+    TILE_URL: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+
+    TILE_ATTR: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+
+    makeTileLayer: function () {
+      var self = this;
+      var Cached = L.TileLayer.extend({
+        createTile: function (coords, done) {
+          var tile = document.createElement('img');
+          tile.alt = '';
+          tile.setAttribute('role', 'presentation');
+          var key = coords.z + '/' + coords.x + '/' + coords.y;
+          var url = this.getTileUrl(coords);
+          // done() fires on load/error so Leaflet's fade-in and 'load' event
+          // reflect real tiles, and blob URLs are always revoked.
+          var show = function (src, blobUrl) {
+            tile.onload = function () { if (blobUrl) URL.revokeObjectURL(blobUrl); done(null, tile); };
+            tile.onerror = function (e) { if (blobUrl) URL.revokeObjectURL(blobUrl); done(e, tile); };
+            tile.src = src;
+          };
+          CZDB.get('tiles', key).then(function (blob) {
+            if (blob) { var u = URL.createObjectURL(blob); show(u, u); return; }
+            if (!navigator.onLine) { done(new Error('offline, not cached'), tile); return; }
+            fetch(url, { mode: 'cors' })
+              .then(function (r) { if (!r.ok) throw new Error('tile'); return r.blob(); })
+              .then(function (b) {
+                CZDB.put('tiles', key, b).then(function () { self.tileCount++; }).catch(function () { });
+                var u = URL.createObjectURL(b);
+                show(u, u);
+              })
+              .catch(function () { show(url, null); }); // CORS fallback, uncached
+          }).catch(function () { show(url, null); });
+          return tile;
+        }
+      });
+      return new Cached(this.TILE_URL, { attribution: this.TILE_ATTR, maxZoom: 19, maxNativeZoom: 19 });
+    },
+
+    initMini: function () {
+      var self = this;
+      this.$nextTick(function () {
+        var el = document.getElementById('miniMap');
+        if (!el) return;
+        var c = self.centre();
+        var lat = parseFloat(self.cur.lat), lng = parseFloat(self.cur.lng);
+        if (!isFinite(lat) || !isFinite(lng)) { lat = c[0]; lng = c[1]; self.cur.lat = lat; self.cur.lng = lng; }
+        if (!self.miniMap) {
+          self.miniMap = L.map(el, { zoomControl: false }).setView([lat, lng], 17);
+          self.miniMap.attributionControl.setPrefix(false);
+          self.makeTileLayer().addTo(self.miniMap);
+          self.miniMarker = L.marker([lat, lng], { draggable: true, icon: self.icon(self.cur.risk) }).addTo(self.miniMap);
+          self.miniMarker.on('dragend', function (e) {
+            var p = e.target.getLatLng();
+            self.cur.lat = +p.lat.toFixed(6);
+            self.cur.lng = +p.lng.toFixed(6);
+          });
+          self.miniMap.on('click', function (e) {
+            self.cur.lat = +e.latlng.lat.toFixed(6);
+            self.cur.lng = +e.latlng.lng.toFixed(6);
+            self.miniMarker.setLatLng(e.latlng);
+          });
+        } else {
+          self.miniMarker.setLatLng([lat, lng]);
+          self.miniMarker.setIcon(self.icon(self.cur.risk));
+          self.miniMap.setView([lat, lng], 17);
+        }
+        setTimeout(function () {
+          self.miniMap.invalidateSize();
+          if (self.pendLat !== null) {
+            self.miniMarker.setLatLng([self.pendLat, self.pendLng]);
+            self.miniMap.flyTo([self.pendLat, self.pendLng], 18);
+            self.cur.lat = self.pendLat; self.cur.lng = self.pendLng;
+            self.pendLat = null; self.pendLng = null;
+          }
+        }, 180);
+      });
+    },
+    setPin: function (lat, lng) {
+      this.cur.lat = lat; this.cur.lng = lng;
+      if (this.miniMap && this.miniMarker) {
+        this.miniMarker.setLatLng([lat, lng]);
+        this.miniMap.flyTo([lat, lng], 18);
+      } else { this.pendLat = lat; this.pendLng = lng; }
+    },
+    useDeviceGPS: function () {
+      var self = this;
+      if (!navigator.geolocation) { toast('No geolocation on this device', 'err'); return; }
+      toast('Getting device position…');
+      navigator.geolocation.getCurrentPosition(function (p) {
+        self.gpsOk = true;
+        self.setPin(+p.coords.latitude.toFixed(6), +p.coords.longitude.toFixed(6));
+        toast('Pin set from device GPS', 'ok');
+      }, function () { toast('Device position unavailable', 'err'); }, { enableHighAccuracy: true, timeout: 12000 });
+    },
+    openMap: function () {
+      var self = this;
+      this.tab = 'map';
+      this.$nextTick(function () {
+        if (!self.mainMap) {
+          self.mainMap = L.map(self.$refs.mainMap).setView(self.centre(), 15);
+          self.tileLayer = self.makeTileLayer().addTo(self.mainMap);
+        }
+        self.drawMarkers();
+        setTimeout(function () { self.mainMap.invalidateSize(); }, 120);
+      });
+    },
+    drawMarkers: function () {
+      if (!this.mainMap) return;
+      var self = this;
+      this.mainMap.eachLayer(function (l) { if (l instanceof L.Marker) self.mainMap.removeLayer(l); });
+      var pts = [];
+      this.findings.forEach(function (f, i) {
+        var la = parseFloat(f.lat), ln = parseFloat(f.lng);
+        if (!isFinite(la) || !isFinite(ln)) return;
+        pts.push([la, ln]);
+        var m = L.marker([la, ln], { icon: self.icon(f.risk) }).addTo(self.mainMap);
+        var bg = self.riskHex(f.risk), fg = self.riskDark(f.risk) ? '#0f172a' : '#fff';
+        var h = '<div style="width:186px;font-family:system-ui,sans-serif">';
+        if (self.thumbs[f.id]) h += '<img src="' + self.thumbs[f.id] + '" style="width:100%;border-radius:7px;margin-bottom:7px;display:block">';
+        h += '<div style="font-size:9px;color:#94a3b8;font-weight:800;letter-spacing:.06em">REF ' + (i + 1) + '</div>'
+          + '<div style="font-size:11.5px;font-weight:700;margin:2px 0 6px;line-height:1.35">' + xe(f.title) + '</div>'
+          + '<span style="font-size:9px;background:' + bg + ';color:' + fg + ';padding:2px 8px;border-radius:5px;font-weight:800">' + xe(f.risk) + '</span>';
+        if (f.chainage) h += '<div style="font-size:10px;color:#006747;font-weight:700;margin-top:5px">' + xe(f.chainage) + '</div>';
+        h += '</div>';
+        m.bindPopup(h, { maxWidth: 210 });
+      });
+      if (pts.length) this.mainMap.fitBounds(pts, { padding: [50, 50], maxZoom: 17 });
+    },
+
+    cacheView: function () {
+      if (!this.mainMap) return;
+      var self = this;
+      var b = this.mainMap.getBounds(), z0 = this.mainMap.getZoom();
+      if (!navigator.onLine) { toast('Need a connection to cache tiles', 'err'); return; }
+      // count first (cheap), so a zoomed-out view is refused before building a huge list
+      var ranges = [], total = 0;
+      for (var z = z0; z <= Math.min(z0 + 2, 19); z++) {
+        var n = Math.pow(2, z);
+        var nw = this.mainMap.project(b.getNorthWest(), z).divideBy(256).floor();
+        var se = this.mainMap.project(b.getSouthEast(), z).divideBy(256).floor();
+        // clamp to the valid tile grid (the view can extend past the poles or wrap the antimeridian)
+        var x0 = Math.max(0, nw.x), x1 = Math.min(n - 1, se.x), y0 = Math.max(0, nw.y), y1 = Math.min(n - 1, se.y);
+        if (x1 < x0 || y1 < y0) continue;
+        ranges.push([z, x0, x1, y0, y1]);
+        total += (x1 - x0 + 1) * (y1 - y0 + 1);
+      }
+      if (!total) return;
+      if (total > 1800) { toast('Zoom in — that area is too large to cache (' + total + ' tiles)', 'err'); return; }
+      var jobs = [];
+      ranges.forEach(function (r) {
+        for (var x = r[1]; x <= r[2]; x++)
+          for (var y = r[3]; y <= r[4]; y++) jobs.push({ z: r[0], x: x, y: y });
+      });
+
+      this.caching = true; this.cacheProg = 0;
+      var done = 0, i = 0, CONC = 6;
+
+      var next = function () {
+        if (i >= jobs.length) return Promise.resolve();
+        var t = jobs[i++];
+        var key = t.z + '/' + t.x + '/' + t.y;
+        return CZDB.get('tiles', key).then(function (ex) {
+          if (ex) return null;
+          var url = self.TILE_URL.replace('{z}', t.z).replace('{x}', t.x).replace('{y}', t.y);
+          return fetch(url, { mode: 'cors' })
+            .then(function (r) { return r.ok ? r.blob() : null; })
+            .then(function (bl) { if (bl) return CZDB.put('tiles', key, bl).then(function () { self.tileCount++; }); })
+            .catch(function () { });
+        }).catch(function () { }).then(function () {
+          done++;
+          self.cacheProg = Math.round(done / jobs.length * 100);
+          return next();
+        });
+      };
+
+      var pool = [];
+      for (var c = 0; c < CONC; c++) pool.push(next());
+      Promise.all(pool).then(function () { return CZDB.count('tiles'); }).then(function (n) {
+        self.caching = false;
+        self.tileCount = n;   // recount: concurrent map views can double-count
+        toast(n + ' tiles cached for offline use', 'ok');
+      }).catch(function () { self.caching = false; });
+    },
+    clearTiles: function () {
+      var self = this;
+      if (!confirm('Clear all cached map tiles?')) return;
+      CZDB.clear('tiles').then(function () { self.tileCount = 0; toast('Tile cache cleared', 'ok'); });
+    },
+    refreshAssets: function () {
+      var self = this;
+      if (!navigator.onLine) { toast('Need a connection to re-download', 'err'); return; }
+      toast('Re-downloading libraries…');
+      // fetch everything first, then write: a failed or partial download must
+      // never replace a working cached copy (an error page cached as JS would
+      // stop the app opening at all)
+      var list = VENDORS.slice();
+      if (this.heicCached) list.push(HEIC_VENDOR);
+      Promise.all(list.map(function (v) { return fetchVendor(v); }))
+        .then(function (codes) {
+          return Promise.all(list.map(function (v, i) { return CZDB.put('assets', v.k, { u: v.u, code: codes[i] }); }));
+        })
+        .then(function () { self.refreshAssetStatus(); toast('Libraries refreshed — reload to apply', 'ok'); })
+        .catch(function (e) { console.error(e); toast('Refresh failed — cached libraries left unchanged', 'err'); });
+    },
+    wipeAll: function () {
+      var self = this;
+      if (!confirm('Delete ALL findings and photos on this device? Export first if you need them.')) return;
+      if (!confirm('Last chance — this is permanent. Continue?')) return;
+      Promise.all([CZDB.clear('photos'), CZDB.clear('thumbs')]).then(function () {
+        self.findings = []; self.thumbs = {};
+        localStorage.removeItem('clearzone_findings_v3');
+        self.saveFindings();
+        if (self.mainMap) self.drawMarkers();
+        toast('All findings deleted', 'ok');
+      });
+    },
+
+    /* ============================================================
+       PROJECT FILE — export / import
+       ============================================================ */
+    exportProject: function () {
+      var self = this;
+      this.busy = true;
+      var photos = {};
+      var chain = Promise.resolve();
+      this.findings.forEach(function (f) {
+        if (!f.hasPhoto) return;
+        chain = chain.then(function () {
+          return CZDB.get('photos', f.id).then(function (p) { if (p) photos[f.id] = p; }).catch(function () { });
+        });
+      });
+      chain.then(function () {
+        var bundle = {
+          format: 'clearzone-project',
+          version: 3,
+          exported: new Date().toISOString(),
+          project: self.project,
+          findings: self.findings,
+          photos: photos
+        };
+        var blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
+        var name = (self.project.projectName || 'ClearZone_Audit').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_');
+        download(blob, name + '_' + new Date().toISOString().slice(0, 10) + '.clearzone.json');
+        self.busy = false;
+        toast('Project exported — ' + self.findings.length + ' findings', 'ok');
+      }).catch(function (e) {
+        self.busy = false; console.error(e); toast('Export failed', 'err');
+      });
+    },
+
+    /* merge=false: replace everything on this device with the file.
+       merge=true:  append the file's findings and photos to this audit (team
+       members recording on separate devices); project details are kept.     */
+    importProject: function (ev, merge) {
+      var file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      ev.target.value = '';
+      var self = this;
+      var failed = 0;
+      file.text().then(function (txt) {
+        var b = JSON.parse(txt);
+        if (!b || b.format !== 'clearzone-project') throw new Error('Not a ClearZone project file');
+        var inc = Array.isArray(b.findings) ? b.findings.filter(function (f) { return f && typeof f === 'object'; }) : [];
+        var n = inc.length;
+        var pname = (b.project && b.project.projectName) || 'untitled';
+        var msg = merge
+          ? 'Merge ' + n + ' findings from "' + pname + '" into this audit?\n\nExisting findings are kept; the new ones are added at the end.'
+          : 'Import ' + n + ' findings from "' + pname + '"?\n\nThis REPLACES everything currently on this device.';
+        if (!confirm(msg)) return;
+
+        self.busy = true;
+        var photos = b.photos || {};
+        var d = self.defaultProject();
+        var matrix = self.project.matrix;
+        var newProj = null;
+        if (!merge) {
+          var p = newProj = (b.project && typeof b.project === 'object') ? b.project : {};
+          Object.keys(d).forEach(function (k) { if (p[k] === undefined) p[k] = d[k]; });
+          if (!Array.isArray(p.modifiers)) p.modifiers = [];
+          var okMx = Array.isArray(p.matrix) && p.matrix.length === 5 && p.matrix.every(function (r) { return Array.isArray(r) && r.length === 5; });
+          if (!okMx) p.matrix = d.matrix;
+          if (!Array.isArray(p.freqLabels) || p.freqLabels.length !== 5) p.freqLabels = d.freqLabels;
+          if (!Array.isArray(p.sevLabels) || p.sevLabels.length !== 5) p.sevLabels = d.sevLabels;
+          matrix = p.matrix;
+        }
+        // normalise every finding so a hand-edited or older file cannot break the UI
+        var taken = {};
+        if (merge) self.findings.forEach(function (f) { taken[f.id] = true; });
+        var clean = inc.map(function (o) {
+          var f = JSON.parse(JSON.stringify(o));
+          var oldId = f.id;
+          if (!f.id || taken[f.id]) f.id = self.uid();
+          taken[f.id] = true;
+          f._src = oldId;
+          if (!Array.isArray(f.crashTypes)) f.crashTypes = [];
+          f.freqIdx = (f.freqIdx >= 0 && f.freqIdx < 5) ? +f.freqIdx : 2;
+          f.sevIdx = (f.sevIdx >= 0 && f.sevIdx < 5) ? +f.sevIdx : 1;
+          f.risk = (matrix[f.freqIdx] && matrix[f.freqIdx][f.sevIdx]) || f.risk || 'Medium';
+          f.title = f.title || 'Untitled finding';
+          f.hasPhoto = !!(oldId && photos[oldId]);
+          return f;
+        });
+
+        var start = merge ? Promise.resolve() : Promise.all([CZDB.clear('photos'), CZDB.clear('thumbs')]);
+        return start.then(function () {
+          if (!merge) {
+            self.project = newProj;
+            self.saveProject();
+            self.thumbs = {};
+          }
+          var chain = Promise.resolve();
+          clean.forEach(function (f) {
+            var src = f._src; delete f._src;
+            if (!f.hasPhoto) return;
+            chain = chain.then(function () {
+              // one bad photo must not abort the whole import
+              return self.storePhoto(f.id, photos[src]).catch(function (e) { console.error(e); failed++; f.hasPhoto = false; });
+            });
+          });
+          return chain;
+        }).then(function () {
+          self.findings = merge ? self.findings.concat(clean) : clean;
+          self.saveFindings();
+          self.busy = false;
+          if (self.mainMap) self.drawMarkers();
+          self.tab = 'findings';
+          toast((merge ? 'Merged ' : 'Imported ') + n + ' findings' + (failed ? ' — ' + failed + ' photo(s) could not be stored' : ''), failed ? 'err' : 'ok');
+        });
+      }).catch(function (e) {
+        self.busy = false; console.error(e);
+        toast(e instanceof SyntaxError ? 'That file is not valid JSON' : (e.message || 'Import failed'), 'err');
+      });
+    },
+
+    /* ============================================================
+       WORD EXPORT — raw OOXML zipped with fflate, + concatenation only
+       ============================================================ */
+    exportWord: function () {
+      var self = this;
+      if (!this.findings.length) { toast('No findings to export', 'err'); return; }
+      if (typeof fflate === 'undefined') { toast('fflate not available — reload while online', 'err'); return; }
+      this.busy = true;
+
+      var photos = {}, dims = {};
+      var chain = Promise.resolve();
+      this.findings.forEach(function (f) {
+        if (!f.hasPhoto) return;
+        chain = chain.then(function () {
+          return CZDB.get('photos', f.id).then(function (p) {
+            if (!p) return;
+            photos[f.id] = p;
+            return self.imgSize(p).then(function (d) { if (d) dims[f.id] = d; });
+          }).catch(function () { });
+        });
+      });
+
+      chain.then(function () { return self.buildDocx(photos, dims); })
+        .then(function (bytes) {
+          var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+          var name = (self.project.projectName || 'RSA_Audit').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_');
+          download(blob, name + '_Audit_Findings_' + new Date().toISOString().slice(0, 10) + '.docx');
+          self.busy = false;
+          toast('Word report exported', 'ok');
+        })
+        .catch(function (e) { self.busy = false; console.error(e); toast('Export failed: ' + e.message, 'err'); });
+    },
+
+    imgSize: function (dataUri) {
+      return new Promise(function (res) {
+        var img = new Image();
+        img.onload = function () { res({ w: img.naturalWidth, h: img.naturalHeight }); };
+        img.onerror = function () { res(null); };
+        img.src = dataUri;
+      });
+    },
+
+    /* Returns the .docx as a Uint8Array. dims[id] = {w,h} keeps each photo's
+       real aspect ratio — a fixed 3:2 frame squashed every portrait photo. */
+    buildDocx: function (photos, dims) {
+      var self = this;
+      var P = this.project;
+      dims = dims || {};
+      var parts = {};
+      var put = function (path, xml) { parts[path] = [fflate.strToU8(xml), { level: 6 }]; };
+      var putB64 = function (path, b64) {
+        var bin = atob(b64), u = new Uint8Array(bin.length);
+        for (var k = 0; k < bin.length; k++) u[k] = bin.charCodeAt(k);
+        parts[path] = [u, { level: 0 }];   // JPEG/PNG are already compressed
+      };
+
+      /* --- images (bytes added last, after every XML part) --- */
+      var imgs = [], media = [];
+      var BOXW = 4114800, BOXH = 2743200;
+      this.findings.forEach(function (f, i) {
+        var data = photos[f.id];
+        if (!data || data.indexOf('data:image/') !== 0) { imgs.push(null); return; }
+        var mime = data.split(';')[0].split(':')[1];
+        var sub = mime.split('/')[1];
+        if (sub !== 'jpeg' && sub !== 'png') { imgs.push(null); return; }
+        var ext = sub === 'jpeg' ? 'jpg' : sub;
+        var cx = BOXW, cy = BOXH, d = dims[f.id];
+        if (d && d.w > 0 && d.h > 0) {
+          var sc = Math.min(BOXW / d.w, BOXH / d.h);
+          cx = Math.round(d.w * sc); cy = Math.round(d.h * sc);
+        }
+        media.push({ path: 'word/media/image' + (i + 1) + '.' + ext, b64: data.split(',')[1] });
+        imgs.push({ rid: 'rId' + (i + 100), file: 'image' + (i + 1) + '.' + ext, ext: ext, cx: cx, cy: cy });
+      });
+
+      var exts = [];
+      imgs.forEach(function (r) { if (r && exts.indexOf(r.ext) === -1) exts.push(r.ext); });
+      var defs = exts.map(function (e) {
+        return '<Default Extension="' + e + '" ContentType="image/' + (e === 'jpg' ? 'jpeg' : e) + '"/>';
+      }).join('');
+
+      put('[Content_Types].xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        + '<Default Extension="xml" ContentType="application/xml"/>'
+        + defs
+        + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+        + '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+        + '<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>'
+        + '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>'
+        + '</Types>');
+
+      put('_rels/.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+        + '</Relationships>');
+
+      var imgRels = '';
+      imgs.forEach(function (r) {
+        if (!r) return;
+        imgRels += '<Relationship Id="' + r.rid + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + r.file + '"/>';
+      });
+      put('word/_rels/document.xml.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+        + '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>'
+        + '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>'
+        + imgRels
+        + '</Relationships>');
+
+      put('word/settings.xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        + '<w:defaultTabStop w:val="720"/></w:settings>');
+
+      put('word/styles.xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        + '<w:docDefaults><w:rPrDefault><w:rPr>'
+        + '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>'
+        + '<w:sz w:val="18"/><w:szCs w:val="18"/>'
+        + '</w:rPr></w:rPrDefault></w:docDefaults>'
+        + '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/>'
+        + '<w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:style>'
+        + '</w:styles>');
+
+      var fld = function (instr) {
+        return '<w:r><w:fldChar w:fldCharType="begin"/></w:r>'
+          + '<w:r><w:instrText xml:space="preserve"> ' + instr + ' </w:instrText></w:r>'
+          + '<w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r>'
+          + '<w:r><w:fldChar w:fldCharType="end"/></w:r>';
+      };
+      var frun = function (t) { return '<w:r><w:rPr><w:color w:val="888888"/><w:sz w:val="14"/></w:rPr><w:t xml:space="preserve">' + xe(t) + '</w:t></w:r>'; };
+      put('word/footer1.xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        + '<w:p><w:pPr><w:tabs><w:tab w:val="right" w:pos="20407"/></w:tabs></w:pPr>'
+        + frun((P.projectName || 'Road Safety Audit') + (P.stage ? ' — ' + P.stage + ' Audit' : ''))
+        + '<w:r><w:tab/></w:r>' + frun('Page ') + fld('PAGE') + frun(' of ') + fld('NUMPAGES')
+        + '</w:p></w:ftr>');
+
+      /* --- builders --- */
+      var BDR = '<w:top w:val="single" w:sz="4" w:space="0" w:color="BFBFBF"/>'
+        + '<w:left w:val="single" w:sz="4" w:space="0" w:color="BFBFBF"/>'
+        + '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="BFBFBF"/>'
+        + '<w:right w:val="single" w:sz="4" w:space="0" w:color="BFBFBF"/>';
+
+      /* Word ignores "\n" inside <w:t>, so typed line breaks were lost and
+         multi-line descriptions ran together. Each line becomes its own <w:t>
+         separated by <w:br/>; tabs become <w:tab/>. */
+      var runText = function (text) {
+        return xmlSafe(text).replace(/\r\n?/g, '\n').split('\n').map(function (ln) {
+          return ln.split('\t').map(function (seg) { return '<w:t xml:space="preserve">' + xe(seg) + '</w:t>'; }).join('<w:tab/>');
+        }).join('<w:br/>');
+      };
+
+      var par = function (text, o) {
+        o = o || {};
+        var pPr = '<w:pPr>' + (o.align ? '<w:jc w:val="' + o.align + '"/>' : '')
+          + '<w:spacing w:after="' + (o.after === undefined ? 40 : o.after) + '"/></w:pPr>';
+        return '<w:p>' + pPr + '<w:r><w:rPr>'
+          + (o.b ? '<w:b/><w:bCs/>' : '') + (o.u ? '<w:u w:val="single"/>' : '') + (o.i ? '<w:i/><w:iCs/>' : '')
+          + (o.color ? '<w:color w:val="' + o.color + '"/>' : '')
+          + '<w:sz w:val="' + (o.sz || 18) + '"/><w:szCs w:val="' + (o.sz || 18) + '"/>'
+          + '</w:rPr>' + runText(text) + '</w:r></w:p>';
+      };
+
+      var picN = 1;
+      var pic = function (img) {
+        var id = picN++, cx = img.cx, cy = img.cy, rid = img.rid;
+        return '<w:p><w:pPr><w:spacing w:before="80" w:after="40"/></w:pPr><w:r><w:drawing>'
+          + '<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'
+          + '<wp:extent cx="' + cx + '" cy="' + cy + '"/>'
+          + '<wp:docPr id="' + id + '" name="Photo' + id + '"/>'
+          + '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>'
+          + '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+          + '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+          + '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+          + '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Photo' + id + '"/>'
+          + '<pic:cNvPicPr><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr>'
+          + '<pic:blipFill><a:blip r:embed="' + rid + '" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>'
+          + '<a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
+          + '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>'
+          + '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></pic:spPr>'
+          + '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>';
+      };
+
+      var hcell = function (w, text, rot) {
+        return '<w:tc><w:tcPr><w:tcW w:w="' + w + '" w:type="dxa"/><w:tcBorders>' + BDR + '</w:tcBorders>'
+          + '<w:shd w:val="clear" w:color="auto" w:fill="008768"/>'
+          + (rot ? '<w:textDirection w:val="btLr"/>' : '')
+          + '<w:vAlign w:val="center"/></w:tcPr>'
+          + '<w:p><w:pPr><w:jc w:val="' + (rot ? 'left' : 'center') + '"/><w:spacing w:after="0"/></w:pPr>'
+          + '<w:r><w:rPr><w:b/><w:bCs/><w:color w:val="FFFFFF"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr>'
+          + '<w:t xml:space="preserve">' + xe(text) + '</w:t></w:r></w:p></w:tc>';
+      };
+
+      /* rot: the 568-DXA Likelihood / Severity / Risk columns hold ~5 characters
+         per line, so labels broke mid-word ("Likel|y"). They now read bottom-to-top
+         like their headers, using the row height that the photo already sets. */
+      var dcell = function (w, inner, fill, rot) {
+        var lr = rot ? 28 : 113;
+        return '<w:tc><w:tcPr><w:tcW w:w="' + w + '" w:type="dxa"/><w:tcBorders>' + BDR + '</w:tcBorders>'
+          + (fill ? '<w:shd w:val="clear" w:color="auto" w:fill="' + fill + '"/>' : '')
+          + '<w:tcMar><w:top w:w="57" w:type="dxa"/><w:left w:w="' + lr + '" w:type="dxa"/>'
+          + '<w:bottom w:w="57" w:type="dxa"/><w:right w:w="' + lr + '" w:type="dxa"/></w:tcMar>'
+          + (rot ? '<w:textDirection w:val="btLr"/>' : '')
+          + '<w:vAlign w:val="' + (rot ? 'center' : 'top') + '"/></w:tcPr>' + inner + '</w:tc>';
+      };
+
+      /* --- header block --- */
+      var head = par(P.projectName || 'Road Safety Audit', { b: true, sz: 34, after: 100 });
+
+      var line1 = [];
+      if (P.stage) line1.push(P.stage + ' Audit');
+      if (P.client) line1.push('Client: ' + P.client);
+      if (P.auditDate) line1.push('Audit date: ' + self.fmtDate(P.auditDate));
+      if (P.modifiers && P.modifiers.length) line1.push(P.modifiers.join(', '));
+      if (line1.length) head += par(line1.join('   \u00b7   '), { i: true, color: '555555', sz: 18, after: 60 });
+
+      var line2 = [];
+      if (P.auditor) line2.push('Audit Team Leader: ' + P.auditor);
+      if (P.team) line2.push('Team: ' + P.team);
+      if (P.advisors) line2.push('Specialist advisors: ' + P.advisors);
+      if (line2.length) head += par(line2.join('   \u00b7   '), { color: '777777', sz: 16, after: 60 });
+
+      var line3 = [];
+      if (P.speedEnv) line3.push('Speed environment: ' + P.speedEnv + ' km/h');
+      if (P.weather) line3.push('Weather: ' + P.weather);
+      if (P.traffic) line3.push('Traffic: ' + P.traffic);
+      if (P.times) line3.push('Inspection: ' + P.times);
+      if (line3.length) head += par(line3.join('   |   '), { color: '777777', sz: 16, after: 60 });
+
+      head += par(this.findings.length + ' finding' + (this.findings.length === 1 ? '' : 's')
+        + '   \u00b7   Generated ' + new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' }),
+        { color: '999999', sz: 15, after: 220 });
+
+      /* --- table --- */
+      var hdr = '<w:tr><w:trPr><w:trHeight w:val="1274"/><w:tblHeader/></w:trPr>'
+        + hcell(846, 'Audit finding ref.')
+        + hcell(11034, 'Audit finding (risk/hazard, extent, crash type)')
+        + hcell(568, 'Likelihood', true)
+        + hcell(568, 'Severity', true)
+        + hcell(568, 'Risk Rating', true)
+        + hcell(3563, 'Recommendation/s')
+        + hcell(3260, 'Client Response')
+        + '</w:tr>';
+
+      var rows = '';
+      this.findings.forEach(function (f, i) {
+        var img = imgs[i];
+        var body = par(f.title || 'Untitled', { u: true, b: true, sz: 18, after: 60 });
+        if (f.chainage) body += par('Chainage / location: ' + f.chainage, { i: true, color: '006747', sz: 15, after: 20 });
+        if (f.promptRef) body += par('Prompt list: ' + f.promptRef, { i: true, color: '006747', sz: 15, after: 20 });
+        var geo = 'GPS: ' + f.lat + ', ' + f.lng;
+        if (f.timestamp) geo += '     Photo taken: ' + f.timestamp;
+        body += par(geo, { i: true, color: '888888', sz: 14, after: 60 });
+        if (f.crashTypes && f.crashTypes.length) body += par('Crash type: ' + f.crashTypes.join(', '), { b: true, sz: 16, after: 60 });
+        if (f.description) body += par(f.description, { sz: 18, after: 60 });
+        if (img) body += pic(img);
+
+        var fl = self.project.freqLabels[f.freqIdx] || '';
+        var sl = self.project.sevLabels[f.sevIdx] || '';
+
+        rows += '<w:tr>'
+          + dcell(846, par(String(i + 1), { b: true, sz: 20, align: 'center' }))
+          + dcell(11034, body)
+          + dcell(568, par(fl, { sz: 16, align: 'center', after: 0 }), null, true)
+          + dcell(568, par(sl, { sz: 16, align: 'center', after: 0 }), null, true)
+          + dcell(568, par(f.risk || '', { b: true, color: self.riskDark(f.risk) ? '0F172A' : 'FFFFFF', sz: 16, align: 'center', after: 0 }), self.riskHex(f.risk).slice(1).toUpperCase(), true)
+          + dcell(3563, par(f.recommendation || 'Treatment to be determined in accordance with TMR standards.', { sz: 18 }))
+          + dcell(3260, '<w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:t xml:space="preserve"></w:t></w:r></w:p>')
+          + '</w:tr>';
+      });
+
+      var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+        + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+        + ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'
+        + ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+        + ' xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+        + '<w:body>'
+        + head
+        + '<w:tbl><w:tblPr><w:tblW w:w="20407" w:type="dxa"/>'
+        + '<w:tblBorders>' + BDR + '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="BFBFBF"/>'
+        + '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="BFBFBF"/></w:tblBorders>'
+        + '<w:tblLayout w:type="fixed"/></w:tblPr>'
+        + '<w:tblGrid><w:gridCol w:w="846"/><w:gridCol w:w="11034"/><w:gridCol w:w="568"/>'
+        + '<w:gridCol w:w="568"/><w:gridCol w:w="568"/><w:gridCol w:w="3563"/><w:gridCol w:w="3260"/></w:tblGrid>'
+        + hdr + rows
+        + '</w:tbl>'
+        + '<w:p><w:pPr><w:spacing w:before="200"/></w:pPr><w:r><w:rPr><w:i/><w:color w:val="AAAAAA"/><w:sz w:val="14"/></w:rPr>'
+        + '<w:t xml:space="preserve">Generated by ClearZone. Findings and risk ratings are the professional judgement of the audit team.</w:t>'
+        + '</w:r></w:p>'
+        + '<w:sectPr><w:footerReference w:type="default" r:id="rId3"/>'
+        + '<w:pgSz w:w="23811" w:h="16838" w:orient="landscape"/>'
+        + '<w:pgMar w:top="1304" w:right="2364" w:bottom="1417" w:left="981" w:header="675" w:footer="357" w:gutter="0"/>'
+        + '</w:sectPr></w:body></w:document>';
+
+      put('word/document.xml', doc);
+      media.forEach(function (m) { putB64(m.path, m.b64); });
+
+      // key insertion order is preserved, so [Content_Types].xml is first
+      return fflate.zipSync(parts);
+    }
+  };
+}
+
+boot(false);
+</script>
+</body>
+</html>
